@@ -26,7 +26,6 @@
       border-color: #38bdf8;
       transform: scale(1.005);
     }
-    /* Custom scrollbar per tabelle a 154 colonne */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: #0f172a; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
@@ -38,7 +37,7 @@
   <!-- TOAST / NOTIFICHE NON BLOCCANTI -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-md pointer-events-none"></div>
 
-  <!-- MODALE DI CONFERMA PERSONALIZZATA (SOSTITUISCE confirm()) -->
+  <!-- MODALE DI CONFERMA PERSONALIZZATA -->
   <div id="confirm-modal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
       <div class="flex items-center gap-3 text-amber-400">
@@ -56,7 +55,7 @@
   </div>
 
   <!-- =====================================================================
-       SCHERMATA DI LOGIN (UTENTI PREDEFINITI)
+       SCHERMATA DI LOGIN (PROTETTA)
        ===================================================================== -->
   <div id="login-screen" class="fixed inset-0 z-40 bg-[#070a12] flex items-center justify-center p-4 overflow-y-auto">
     <div class="w-full max-w-md bg-slate-900/95 border border-slate-800 rounded-3xl p-7 sm:p-8 shadow-2xl space-y-6 my-auto">
@@ -76,7 +75,7 @@
             <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 text-xs">
               <i class="fa-solid fa-user"></i>
             </span>
-            <input type="text" id="login-username" required autocomplete="username" placeholder="Inserisci username..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white outline-none focus:border-sky-400 transition">
+            <input type="text" id="login-username" required autocomplete="username" oninput="controllaUsernameLeone(this.value)" placeholder="Inserisci username..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white outline-none focus:border-sky-400 transition">
           </div>
         </div>
 
@@ -86,7 +85,7 @@
             <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 text-xs">
               <i class="fa-solid fa-lock"></i>
             </span>
-            <input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••••••" class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white outline-none focus:border-sky-400 transition">
+            <input type="password" id="login-password" required autocomplete="current-password" oninput="controllaPasswordLeone()" placeholder="••••••••••••" class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white outline-none focus:border-sky-400 transition">
             <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 text-xs cursor-pointer">
               <i id="eye-icon" class="fa-solid fa-eye"></i>
             </button>
@@ -103,10 +102,10 @@
         </button>
       </form>
 
-      <!-- BOX ESPANDIBILE CREDENZIALI PREDEFINITE -->
-      <div class="border-t border-slate-800 pt-4">
-        <button type="button" onclick="toggleCredenzialiBox()" class="w-full flex items-center justify-between text-[11px] font-bold text-slate-400 hover:text-sky-400 transition cursor-pointer">
-          <span class="flex items-center gap-1.5"><i class="fa-solid fa-key text-sky-400"></i> Credenziali di accesso predefinite</span>
+      <!-- BOX CREDENZIALI RISERVATO ESCLUSIVAMENTE A LEONE BASTIANCICH -->
+      <div id="admin-credenziali-wrapper" class="hidden border-t border-slate-800 pt-4">
+        <button type="button" onclick="toggleCredenzialiBox()" class="w-full flex items-center justify-between text-[11px] font-bold text-sky-400 hover:text-sky-300 transition cursor-pointer bg-sky-500/10 border border-sky-500/30 px-3 py-2 rounded-xl">
+          <span class="flex items-center gap-1.5"><i class="fa-solid fa-key text-sky-400"></i> Area Admin (Leone): Credenziali Predefinite</span>
           <i id="cred-chevron" class="fa-solid fa-chevron-down transition-transform"></i>
         </button>
         <div id="credenziali-box" class="hidden mt-3 bg-slate-950/90 border border-slate-800 rounded-xl p-3 space-y-2 text-[11px]">
@@ -645,61 +644,27 @@
   </div>
 
   <!-- =====================================================================
-       MOTORE JAVASCRIPT COMPLETO: AUTENTICAZIONE, PARSER PDF, 154 COLONNE EXCEL
+       MOTORE JAVASCRIPT COMPLETO E DEFINITIVO
        ===================================================================== -->
   <script>
-    // Configurazione PDF.js Worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    // =========================================================================
-    // 1. DIZIONARIO UTENTI PREDEFINITI (FACILMENTE MODIFICABILE)
-    // =========================================================================
     const UTENTI_PREDEFINITI = {
-      "Leone": {
-        password: "TerzoValico2026",
-        nomeCompleto: "Leone Bastiancich",
-        ruolo: "Addetto Ambiente",
-        iniziali: "LB"
-      },
-      "Andrea": {
-        password: "GiordAndre!",
-        nomeCompleto: "Andrea Giordano",
-        ruolo: "Addetto Ambiente",
-        iniziali: "AG"
-      },
-      "Giulio": {
-        password: "GaldGiul!",
-        nomeCompleto: "Giulio Galdino",
-        ruolo: "Addetto Ambiente",
-        iniziali: "GG"
-      },
-      "Giusy": {
-        password: "MontGius!",
-        nomeCompleto: "Giusy Monteleone",
-        ruolo: "Addetta Ambiente",
-        iniziali: "GM"
-      },
-      "Gabriela": {
-        password: "CezGabPusc!",
-        nomeCompleto: "Cezara Gabriela Puscasu",
-        ruolo: "Addetta Ambiente",
-        iniziali: "CGP"
-      }
+      "Leone": { password: "TerzoValico2026", nomeCompleto: "Leone Bastiancich", ruolo: "Addetto Ambiente", iniziali: "LB" },
+      "Andrea": { password: "GiordAndre!", nomeCompleto: "Andrea Giordano", ruolo: "Addetto Ambiente", iniziali: "AG" },
+      "Giulio": { password: "GaldGiul!", nomeCompleto: "Giulio Galdino", ruolo: "Addetto Ambiente", iniziali: "GG" },
+      "Giusy": { password: "MontGius!", nomeCompleto: "Giusy Monteleone", ruolo: "Addetta Ambiente", iniziali: "GM" },
+      "Gabriela": { password: "CezGabPusc!", nomeCompleto: "Cezara Gabriela Puscasu", ruolo: "Addetta Ambiente", iniziali: "CGP" }
     };
 
-    // =========================================================================
-    // 2. DEFINIZIONE ESATTA DEI 97 ANALITI CHIMICI (COLONNE BF -> EX)
-    //    Ogni voce corrisponde 1:1 alla colonna reale di fac-simile_Registro_RdP.xlsx
-    // =========================================================================
     const ANALITI_97 = [
-      // Colonne BF (index 57) -> EX (index 153)
       { col: "BF", key: "antimonio", excelHeader: "Antimonio (Sb)", cat: "Metalli", um: "mg/kg ss", colA: "10", colB: "30", aliases: ["Antimonio (Sb)", "Antimonio"] },
       { col: "BG", key: "arsenico", excelHeader: "Arsenico (As) ", cat: "Metalli", um: "mg/kg ss", colA: "20", colB: "50", aliases: ["Arsenico (As)", "Arsenico"] },
       { col: "BH", key: "berillio", excelHeader: "Berillio (Be)", cat: "Metalli", um: "mg/kg ss", colA: "2", colB: "10", aliases: ["Berillio (Be)", "Berillio"] },
       { col: "BI", key: "cadmio", excelHeader: "Cadmio (Cd)", cat: "Metalli", um: "mg/kg ss", colA: "2", colB: "15", aliases: ["Cadmio (Cd)", "Cadmio"] },
       { col: "BJ", key: "cobalto", excelHeader: "Cobalto (Co)", cat: "Metalli", um: "mg/kg ss", colA: "20", colB: "250", aliases: ["Cobalto (Co)", "Cobalto"] },
       { col: "BK", key: "cromo", excelHeader: "Cromo", cat: "Metalli", um: "mg/kg ss", colA: "150", colB: "800", aliases: ["Cromo totale", "Cromo (Cr)", "Cromo"] },
-      { col: "BL", key: "cromo_vi", excelHeader: "Cromo VI", cat: "Metalli", um: "mg/kg ss", colA: "2", colB: "15", aliases: ["Cromo (VI)", "Cromo VI", "Cromo esavalente"] },
+      { col: "BL", key: "cromo_vi", excelHeader: "Cromo VI", cat: "Metalli", um: "mg/kg ss", colA: "2", colB: "15", aliases: ["Cromo (VI)", "Cromo VI"] },
       { col: "BM", key: "mercurio", excelHeader: "Mercurio (Hg)", cat: "Metalli", um: "mg/kg ss", colA: "1", colB: "5", aliases: ["Mercurio (Hg)", "Mercurio"] },
       { col: "BN", key: "nichel", excelHeader: "Nichel (Ni)", cat: "Metalli", um: "mg/kg ss", colA: "120", colB: "500", aliases: ["Nichel (Ni)", "Nichel"] },
       { col: "BO", key: "piombo", excelHeader: "Piombo (Pb)", cat: "Metalli", um: "mg/kg ss", colA: "100", colB: "1000", aliases: ["Piombo (Pb)", "Piombo"] },
@@ -709,42 +674,36 @@
       { col: "BS", key: "tallio", excelHeader: "Tallio (Tl)", cat: "Metalli", um: "mg/kg ss", colA: "1", colB: "10", aliases: ["Tallio (Tl)", "Tallio"] },
       { col: "BT", key: "vanadio", excelHeader: "Vanadio (V)", cat: "Metalli", um: "mg/kg ss", colA: "90", colB: "250", aliases: ["Vanadio (V)", "Vanadio"] },
       { col: "BU", key: "zinco", excelHeader: "Zinco (Zn)", cat: "Metalli", um: "mg/kg ss", colA: "150", colB: "1500", aliases: ["Zinco (Zn)", "Zinco"] },
-      { col: "BV", key: "cianuri", excelHeader: "Cianuri (liberi)", cat: "Metalli", um: "mg/kg ss", colA: "1", colB: "100", aliases: ["Cianuri (liberi)", "Cianuri liberi", "Cianuri"] },
+      { col: "BV", key: "cianuri", excelHeader: "Cianuri (liberi)", cat: "Metalli", um: "mg/kg ss", colA: "1", colB: "100", aliases: ["Cianuri (liberi)"] },
       { col: "BW", key: "fluoruri", excelHeader: "Fluoruri", cat: "Metalli", um: "mg/kg ss", colA: "100", colB: "2000", aliases: ["Fluoruri"] },
-
-      // BTEX & Stirene
       { col: "BX", key: "benzene", excelHeader: "Benzene", cat: "Idrocarburi", um: "mg/kg ss", colA: "0,1", colB: "2", aliases: ["Benzene"] },
       { col: "BY", key: "etilbenzene", excelHeader: "Etilbenzene", cat: "Idrocarburi", um: "mg/kg ss", colA: "0,5", colB: "50", aliases: ["Etilbenzene"] },
       { col: "BZ", key: "stirene", excelHeader: "Stirene", cat: "Idrocarburi", um: "mg/kg ss", colA: "0,5", colB: "50", aliases: ["Stirene"] },
       { col: "CA", key: "toluene", excelHeader: "Toluene", cat: "Idrocarburi", um: "mg/kg ss", colA: "0,5", colB: "50", aliases: ["Toluene"] },
-      { col: "CB", key: "xilene", excelHeader: "Xilene", cat: "Idrocarburi", um: "mg/kg ss", colA: "0,5", colB: "50", aliases: ["Xileni", "Xilene", "m,p-Xilene", "o-Xilene"] },
-      { col: "CC", key: "sommatoria_bt", excelHeader: "Sommatoria organici aromatici", cat: "Idrocarburi", um: "mg/kg ss", colA: "1", colB: "100", aliases: ["Sommatoria organici aromatici", "Sommatoria BTEX"] },
-
-      // IPA
-      { col: "CD", key: "benzo_a_antracene", excelHeader: "Benzo(a)antracene", cat: "IPA", um: "mg/kg ss", colA: "0,5", colB: "10", aliases: ["Benzo(a)antracene", "Benzo[a]antracene"] },
-      { col: "CE", key: "benzo_a_pirene", excelHeader: "Benzo(a)pirene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Benzo(a)pirene", "Benzo[a]pirene"] },
-      { col: "CF", key: "benzo_b_fluorantene", excelHeader: "Benzo(b)fluorantene", cat: "IPA", um: "mg/kg ss", colA: "0,5", colB: "10", aliases: ["Benzo(b)fluorantene", "Benzo[b]fluorantene"] },
-      { col: "CG", key: "benzo_k_fluorantene", excelHeader: "Benzo(k)fluorantene", cat: "IPA", um: "mg/kg ss", colA: "0,5", colB: "10", aliases: ["Benzo(k)fluorantene", "Benzo[k]fluorantene"] },
-      { col: "CH", key: "benzo_ghi_perilene", excelHeader: "Benzo(g,h,i)perilene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Benzo(g,h,i)perilene", "Benzo[g,h,i]perilene"] },
+      { col: "CB", key: "xilene", excelHeader: "Xilene", cat: "Idrocarburi", um: "mg/kg ss", colA: "0,5", colB: "50", aliases: ["Xileni", "Xilene"] },
+      { col: "CC", key: "sommatoria_bt", excelHeader: "Sommatoria organici aromatici", cat: "Idrocarburi", um: "mg/kg ss", colA: "1", colB: "100", aliases: ["Sommatoria organici aromatici"] },
+      { col: "CD", key: "benzo_a_antracene", excelHeader: "Benzo(a)antracene", cat: "IPA", um: "mg/kg ss", colA: "0,5", colB: "10", aliases: ["Benzo(a)antracene"] },
+      { col: "CE", key: "benzo_a_pirene", excelHeader: "Benzo(a)pirene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Benzo(a)pirene"] },
+      { col: "CF", key: "benzo_b_fluorantene", excelHeader: "Benzo(b)fluorantene", cat: "IPA", um: "mg/kg ss", colA: "0,5", colB: "10", aliases: ["Benzo(b)fluorantene"] },
+      { col: "CG", key: "benzo_k_fluorantene", excelHeader: "Benzo(k)fluorantene", cat: "IPA", um: "mg/kg ss", colA: "0,5", colB: "10", aliases: ["Benzo(k)fluorantene"] },
+      { col: "CH", key: "benzo_ghi_perilene", excelHeader: "Benzo(g,h,i)perilene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Benzo(g,h,i)perilene"] },
       { col: "CI", key: "crisene", excelHeader: "Crisene", cat: "IPA", um: "mg/kg ss", colA: "5", colB: "50", aliases: ["Crisene"] },
-      { col: "CJ", key: "dibenzo_ae_pirene", excelHeader: "Dibenzo(a,e)pirene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Dibenzo(a,e)pirene", "Dibenzo[a,e]pirene"] },
-      { col: "CK", key: "dibenzo_al_pirene", excelHeader: "Dibenzo(a,l)pirene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Dibenzo(a,l)pirene", "Dibenzo[a,l]pirene"] },
-      { col: "CL", key: "dibenzo_ai_pirene", excelHeader: "Dibenzo(a,i)pirene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Dibenzo(a,i)pirene", "Dibenzo[a,i]pirene"] },
-      { col: "CM", key: "dibenzo_ah_pirene", excelHeader: "Dibenzo(a,h)pirene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Dibenzo(a,h)pirene", "Dibenzo[a,h]pirene"] },
-      { col: "CN", key: "dibenzo_ah_antracene", excelHeader: "Dibenzo(a,h)antracene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Dibenzo(a,h)antracene", "Dibenzo[a,h]antracene"] },
-      { col: "CO", key: "indeno_pirene", excelHeader: "Indeno(1,2,3-c,d)pirene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "5", aliases: ["Indeno(1,2,3-c,d)pirene", "Indeno(1,2,3-cd)pirene", "Indenopirene"] },
+      { col: "CJ", key: "dibenzo_ae_pirene", excelHeader: "Dibenzo(a,e)pirene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Dibenzo(a,e)pirene"] },
+      { col: "CK", key: "dibenzo_al_pirene", excelHeader: "Dibenzo(a,l)pirene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Dibenzo(a,l)pirene"] },
+      { col: "CL", key: "dibenzo_ai_pirene", excelHeader: "Dibenzo(a,i)pirene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Dibenzo(a,i)pirene"] },
+      { col: "CM", key: "dibenzo_ah_pirene", excelHeader: "Dibenzo(a,h)pirene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Dibenzo(a,h)pirene"] },
+      { col: "CN", key: "dibenzo_ah_antracene", excelHeader: "Dibenzo(a,h)antracene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Dibenzo(a,h)antracene"] },
+      { col: "CO", key: "indeno_pirene", excelHeader: "Indeno(1,2,3-c,d)pirene", cat: "IPA", um: "mg/kg ss", colA: "0,1", colB: "5", aliases: ["Indeno(1,2,3-c,d)pirene"] },
       { col: "CP", key: "pirene", excelHeader: "Pirene", cat: "IPA", um: "mg/kg ss", colA: "5", colB: "50", aliases: ["Pirene"] },
-      { col: "CQ", key: "sommatoria_ipa", excelHeader: "Sommatoria policiclici aromatici", cat: "IPA", um: "mg/kg ss", colA: "10", colB: "100", aliases: ["Sommatoria policiclici aromatici", "Sommatoria IPA", "IPA totali"] },
-
-      // Alifatici Clorurati Cancerogeni e Non Cancerogeni
+      { col: "CQ", key: "sommatoria_ipa", excelHeader: "Sommatoria policiclici aromatici", cat: "IPA", um: "mg/kg ss", colA: "10", colB: "100", aliases: ["Sommatoria policiclici aromatici"] },
       { col: "CR", key: "clorometano", excelHeader: "Clorometano", cat: "Alifatici", um: "mg/kg ss", colA: "0,1", colB: "5", aliases: ["Clorometano"] },
       { col: "CS", key: "diclorometano", excelHeader: "Diclorometano", cat: "Alifatici", um: "mg/kg ss", colA: "0,1", colB: "5", aliases: ["Diclorometano"] },
       { col: "CT", key: "triclorometano", excelHeader: "Triclorometano", cat: "Alifatici", um: "mg/kg ss", colA: "0,1", colB: "5", aliases: ["Triclorometano", "Cloroformio"] },
       { col: "CU", key: "cloruro_vinile", excelHeader: "Cloruro di vinile", cat: "Alifatici", um: "mg/kg ss", colA: "0,01", colB: "0,1", aliases: ["Cloruro di vinile"] },
       { col: "CV", key: "1_2_dicloroetano", excelHeader: "1,2-Dicloroetano", cat: "Alifatici", um: "mg/kg ss", colA: "0,2", colB: "5", aliases: ["1,2-Dicloroetano"] },
-      { col: "CW", key: "1_1_dicloroetilene", excelHeader: "1,1 Dicloroetilene", cat: "Alifatici", um: "mg/kg ss", colA: "0,1", colB: "1", aliases: ["1,1 Dicloroetilene", "1,1-Dicloroetilene"] },
+      { col: "CW", key: "1_1_dicloroetilene", excelHeader: "1,1 Dicloroetilene", cat: "Alifatici", um: "mg/kg ss", colA: "0,1", colB: "1", aliases: ["1,1 Dicloroetilene"] },
       { col: "CX", key: "tricloroetilene", excelHeader: "Tricloroetilene", cat: "Alifatici", um: "mg/kg ss", colA: "1", colB: "10", aliases: ["Tricloroetilene"] },
-      { col: "CY", key: "tetracloroetilene", excelHeader: "Tetracloroetilene (PCE)", cat: "Alifatici", um: "mg/kg ss", colA: "0,5", colB: "20", aliases: ["Tetracloroetilene (PCE)", "Tetracloroetilene"] },
+      { col: "CY", key: "tetracloroetilene", excelHeader: "Tetracloroetilene (PCE)", cat: "Alifatici", um: "mg/kg ss", colA: "0,5", colB: "20", aliases: ["Tetracloroetilene (PCE)"] },
       { col: "CZ", key: "esaclorobutadiene", excelHeader: "Esaclorobutadiene", cat: "Alifatici", um: "mg/kg ss", colA: "0,1", colB: "5", aliases: ["Esaclorobutadiene"] },
       { col: "DA", key: "sommatoria_alif_canc", excelHeader: "Sommatoria alifatici clorurati cancerogeni", cat: "Alifatici", um: "mg/kg ss", colA: "1", colB: "10", aliases: ["Sommatoria alifatici clorurati cancerogeni"] },
       { col: "DB", key: "1_1_dicloroetano", excelHeader: "1,1-Dicloroetano", cat: "Alifatici", um: "mg/kg ss", colA: "0,5", colB: "30", aliases: ["1,1-Dicloroetano"] },
@@ -754,25 +713,23 @@
       { col: "DF", key: "1_1_2_tricloroetano", excelHeader: "1,1,2-Tricloroetano", cat: "Alifatici", um: "mg/kg ss", colA: "0,5", colB: "15", aliases: ["1,1,2-Tricloroetano"] },
       { col: "DG", key: "1_2_3_tricloropropano", excelHeader: "1,2,3-Tricloropropano", cat: "Alifatici", um: "mg/kg ss", colA: "1", colB: "10", aliases: ["1,2,3-Tricloropropano"] },
       { col: "DH", key: "1_1_2_2_tetracloroetano", excelHeader: "1,1,2,2-Tetracloroetano", cat: "Alifatici", um: "mg/kg ss", colA: "0,5", colB: "10", aliases: ["1,1,2,2-Tetracloroetano"] },
-      { col: "DI", key: "tribromometano", excelHeader: "Tribromometano (bromoformio)", cat: "Alifatici", um: "mg/kg ss", colA: "0,5", colB: "10", aliases: ["Tribromometano (bromoformio)", "Tribromometano", "Bromoformio"] },
+      { col: "DI", key: "tribromometano", excelHeader: "Tribromometano (bromoformio)", cat: "Alifatici", um: "mg/kg ss", colA: "0,5", colB: "10", aliases: ["Tribromometano (bromoformio)"] },
       { col: "DJ", key: "1_2_dibromoetano", excelHeader: "1,2-Dibromoetano", cat: "Alifatici", um: "mg/kg ss", colA: "0,01", colB: "0,1", aliases: ["1,2-Dibromoetano"] },
       { col: "DK", key: "dibromoclorometano", excelHeader: "Dibromoclorometano", cat: "Alifatici", um: "mg/kg ss", colA: "0,5", colB: "10", aliases: ["Dibromoclorometano"] },
       { col: "DL", key: "bromodiclorometano", excelHeader: "Bromodiclorometano", cat: "Alifatici", um: "mg/kg ss", colA: "0,5", colB: "10", aliases: ["Bromodiclorometano"] },
-
-      // Nitrobenzeni, Clorobenzeni, Fenoli, Ammine Aromatiche
       { col: "DM", key: "nitrobenzene", excelHeader: "Nitrobenzene", cat: "Aromatici", um: "mg/kg ss", colA: "0,5", colB: "30", aliases: ["Nitrobenzene"] },
       { col: "DN", key: "1_2_dinitrobenzene", excelHeader: "1,2-Dinitrobenzene", cat: "Aromatici", um: "mg/kg ss", colA: "0,1", colB: "25", aliases: ["1,2-Dinitrobenzene"] },
       { col: "DO", key: "1_3_dinitrobenzene", excelHeader: "1,3-Dinitrobenzene", cat: "Aromatici", um: "mg/kg ss", colA: "0,1", colB: "25", aliases: ["1,3-Dinitrobenzene"] },
       { col: "DP", key: "cloronitrobenzeni", excelHeader: "Cloronitrobenzeni", cat: "Aromatici", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Cloronitrobenzeni"] },
-      { col: "DQ", key: "monoclorobenzene", excelHeader: "Monoclorobenzene", cat: "Aromatici", um: "mg/kg ss", colA: "0,5", colB: "50", aliases: ["Monoclorobenzene", "Clorobenzene"] },
-      { col: "DR", key: "diclorobenzeni", excelHeader: "Diclorobenzeni non cancerogeni (1,2-diclorobenzene)", cat: "Aromatici", um: "mg/kg ss", colA: "1", colB: "50", aliases: ["1,2-diclorobenzene", "Diclorobenzeni"] },
+      { col: "DQ", key: "monoclorobenzene", excelHeader: "Monoclorobenzene", cat: "Aromatici", um: "mg/kg ss", colA: "0,5", colB: "50", aliases: ["Monoclorobenzene"] },
+      { col: "DR", key: "diclorobenzeni", excelHeader: "Diclorobenzeni non cancerogeni (1,2-diclorobenzene)", cat: "Aromatici", um: "mg/kg ss", colA: "1", colB: "50", aliases: ["1,2-diclorobenzene"] },
       { col: "DS", key: "1_4_diclorobenzene", excelHeader: "1,4-diclorobenzene", cat: "Aromatici", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["1,4-diclorobenzene"] },
       { col: "DT", key: "1_2_4_triclorobenzene", excelHeader: "1,2,4-triclorobenzene", cat: "Aromatici", um: "mg/kg ss", colA: "1", colB: "50", aliases: ["1,2,4-triclorobenzene"] },
       { col: "DU", key: "1_2_4_5_tetraclorobenzene", excelHeader: "1,2,4,5-tetraclorobenzene", cat: "Aromatici", um: "mg/kg ss", colA: "1", colB: "25", aliases: ["1,2,4,5-tetraclorobenzene"] },
       { col: "DV", key: "pentaclorobenzene", excelHeader: "Pentaclorobenzene", cat: "Aromatici", um: "mg/kg ss", colA: "0,1", colB: "50", aliases: ["Pentaclorobenzene"] },
       { col: "DW", key: "esaclorobenzene", excelHeader: "Esaclorobenzene", cat: "Aromatici", um: "mg/kg ss", colA: "0,05", colB: "5", aliases: ["Esaclorobenzene"] },
       { col: "DX", key: "fenolo", excelHeader: "Fenolo", cat: "Aromatici", um: "mg/kg ss", colA: "1", colB: "60", aliases: ["Fenolo"] },
-      { col: "DY", key: "metilfenolo", excelHeader: "Metilfenolo (o-, m-, p-)", cat: "Aromatici", um: "mg/kg ss", colA: "0,1", colB: "25", aliases: ["Metilfenolo", "Cresoli"] },
+      { col: "DY", key: "metilfenolo", excelHeader: "Metilfenolo (o-, m-, p-)", cat: "Aromatici", um: "mg/kg ss", colA: "0,1", colB: "25", aliases: ["Metilfenolo"] },
       { col: "DZ", key: "2_4_dimetilfenolo", excelHeader: "2,4-dimetilfenolo", cat: "Aromatici", um: "mg/kg ss", colA: "1", colB: "100", aliases: ["2,4-dimetilfenolo"] },
       { col: "EA", key: "2_clorofenolo", excelHeader: "2-clorofenolo", cat: "Aromatici", um: "mg/kg ss", colA: "0,5", colB: "25", aliases: ["2-clorofenolo"] },
       { col: "EB", key: "2_4_diclorofenolo", excelHeader: "2,4-diclorofenolo", cat: "Aromatici", um: "mg/kg ss", colA: "0,5", colB: "50", aliases: ["2,4-diclorofenolo"] },
@@ -784,31 +741,22 @@
       { col: "EH", key: "difenilamina", excelHeader: "Difenilamina", cat: "Aromatici", um: "mg/kg ss", colA: "0,1", colB: "10", aliases: ["Difenilamina"] },
       { col: "EI", key: "p_toluidina", excelHeader: "p-Toluidina", cat: "Aromatici", um: "mg/kg ss", colA: "0,1", colB: "5", aliases: ["p-Toluidina"] },
       { col: "EJ", key: "sommatoria_ammine", excelHeader: "Sommatoria ammine aromatiche", cat: "Aromatici", um: "mg/kg ss", colA: "0,5", colB: "25", aliases: ["Sommatoria ammine aromatiche"] },
-
-      // Fitofarmaci, Diossine, PCB, Idrocarburi, Amianto, Ftalati
       { col: "EK", key: "alaclor", excelHeader: "Alaclor", cat: "Altro", um: "mg/kg ss", colA: "0,01", colB: "1", aliases: ["Alaclor"] },
       { col: "EL", key: "aldrin", excelHeader: "Aldrin", cat: "Altro", um: "mg/kg ss", colA: "0,01", colB: "0,1", aliases: ["Aldrin"] },
       { col: "EM", key: "atrazina", excelHeader: "Atrazina", cat: "Altro", um: "mg/kg ss", colA: "0,01", colB: "1", aliases: ["Atrazina"] },
-      { col: "EN", key: "alfa_esacloroesano", excelHeader: "alfa-esacloroesano", cat: "Altro", um: "mg/kg ss", colA: "0,01", colB: "0,1", aliases: ["alfa-esacloroesano", "alfa-esaclorocicloesano"] },
-      { col: "EO", key: "beta_esacloroesano", excelHeader: "beta-esacloroesano", cat: "Altro", um: "mg/kg ss", colA: "0,01", colB: "0,5", aliases: ["beta-esacloroesano", "beta-esaclorocicloesano"] },
-      { col: "EP", key: "gamma_esacloroesano", excelHeader: "gamma-esacloroesano (lindano)", cat: "Altro", um: "mg/kg ss", colA: "0,01", colB: "0,5", aliases: ["gamma-esacloroesano", "Lindano"] },
+      { col: "EN", key: "alfa_esacloroesano", excelHeader: "alfa-esacloroesano", cat: "Altro", um: "mg/kg ss", colA: "0,01", colB: "0,1", aliases: ["alfa-esacloroesano"] },
+      { col: "EO", key: "beta_esacloroesano", excelHeader: "beta-esacloroesano", cat: "Altro", um: "mg/kg ss", colA: "0,01", colB: "0,5", aliases: ["beta-esacloroesano"] },
+      { col: "EP", key: "gamma_esacloroesano", excelHeader: "gamma-esacloroesano (lindano)", cat: "Altro", um: "mg/kg ss", colA: "0,01", colB: "0,5", aliases: ["gamma-esacloroesano"] },
       { col: "EQ", key: "clordano", excelHeader: "Clordano", cat: "Altro", um: "mg/kg ss", colA: "0,01", colB: "0,1", aliases: ["Clordano"] },
-      { col: "ER", key: "ddd_ddt_dde", excelHeader: "DDD, DDT, DDE", cat: "Altro", um: "mg/kg ss", colA: "0,01", colB: "0,1", aliases: ["DDD, DDT, DDE", "DDT"] },
+      { col: "ER", key: "ddd_ddt_dde", excelHeader: "DDD, DDT, DDE", cat: "Altro", um: "mg/kg ss", colA: "0,01", colB: "0,1", aliases: ["DDD, DDT, DDE"] },
       { col: "ES", key: "dieldrin", excelHeader: "Dieldrin", cat: "Altro", um: "mg/kg ss", colA: "0,01", colB: "0,1", aliases: ["Dieldrin"] },
       { col: "ET", key: "endrin", excelHeader: "Endrin", cat: "Altro", um: "mg/kg ss", colA: "0,01", colB: "2", aliases: ["Endrin"] },
-      { col: "EU", key: "pcdd_pcdf", excelHeader: "Sommatoria PCDD, PCDF (conversione T.E.)", cat: "Altro", um: "ng/kg ss", colA: "10", colB: "100", aliases: ["Sommatoria PCDD, PCDF", "Diossine"] },
-      { col: "EV", key: "pcb", excelHeader: "Policlorobifenili (PCB)", cat: "Altro", um: "mg/kg ss", colA: "0,06", colB: "5", aliases: ["Policlorobifenili (PCB)", "Policlorobifenili", "PCB"] },
-      { col: "EW", key: "idrocarburi_leggeri", excelHeader: "Idrocarburi leggeri C<12", cat: "Idrocarburi", um: "mg/kg ss", colA: "10", colB: "250", aliases: ["Idrocarburi leggeri C<12", "Idrocarburi leggeri", "C<12", "C<=12"] },
-      { col: "EX", key: "idrocarburi_pesanti", excelHeader: "Idrocarburi pesanti C>12", cat: "Idrocarburi", um: "mg/kg ss", colA: "50", colB: "750", aliases: ["Idrocarburi pesanti C>12", "Idrocarburi pesanti C12-C40", "Idrocarburi pesanti", "C>12", "C12-C40"] }
+      { col: "EU", key: "pcdd_pcdf", excelHeader: "Sommatoria PCDD, PCDF (conversione T.E.)", cat: "Altro", um: "ng/kg ss", colA: "10", colB: "100", aliases: ["Sommatoria PCDD, PCDF"] },
+      { col: "EV", key: "pcb", excelHeader: "Policlorobifenili (PCB)", cat: "Altro", um: "mg/kg ss", colA: "0,06", colB: "5", aliases: ["Policlorobifenili (PCB)", "PCB"] },
+      { col: "EW", key: "idrocarburi_leggeri", excelHeader: "Idrocarburi leggeri C<12", cat: "Idrocarburi", um: "mg/kg ss", colA: "10", colB: "250", aliases: ["Idrocarburi leggeri C<12"] },
+      { col: "EX", key: "idrocarburi_pesanti", excelHeader: "Idrocarburi pesanti C>12", cat: "Idrocarburi", um: "mg/kg ss", colA: "50", colB: "750", aliases: ["Idrocarburi pesanti C>12"] }
     ];
 
-    // Aggiungiamo le colonne aggiuntive di chiusura dopo Idrocarburi pesanti se necessarie per arrivare esattamente a EX (154 colonne)
-    // Verifica indice colonna Excel: A=0, B=1 ... Z=25, AA=26 ... AZ=51, BA=52, BB=53, BC=54, BD=55, BE=56, BF=57 ... EX=153 (totale 154 colonne: 0..153).
-    // BF (57) + 97 analiti = 154 (indici 57..153 -> esatto EX!).
-
-    // =========================================================================
-    // 3. STATO APPLICATIVO E STORAGE
-    // =========================================================================
     const STORAGE_KEY_RECORDS = "tv_registro_rdp_154_records_v1";
     const STORAGE_KEY_SESSION = "tv_registro_rdp_session_v1";
 
@@ -816,16 +764,36 @@
     let archivioRecords = [];
     let codaPdfEstratti = [];
     let indiceCodaAttivo = -1;
-    let templateWorkbookBase = null; // Eventuale file .xlsx caricato dall'utente
+    let templateWorkbookBase = null;
 
-    // =========================================================================
-    // 4. GESTIONE AUTENTICAZIONE (LOGIN / LOGOUT)
-    // =========================================================================
     document.addEventListener("DOMContentLoaded", () => {
       popolaListaUtentiDemo();
       verificaSessioneAttiva();
       configuraDropzone();
     });
+
+    // =========================================================================
+    // FUNZIONE DI PROTEZIONE VISIBILITA' BOX CREDENZIALI (SOLO LEONE)
+    // =========================================================================
+    function controllaUsernameLeone(valore) {
+      const wrapper = document.getElementById("admin-credenziali-wrapper");
+      if (valore.trim().toLowerCase() === "leone") {
+        wrapper.classList.remove("hidden");
+      } else {
+        wrapper.classList.add("hidden");
+        document.getElementById("credenziali-box").classList.add("hidden");
+      }
+    }
+
+    function controllaPasswordLeone() {
+      const username = document.getElementById("login-username").value.trim().toLowerCase();
+      const password = document.getElementById("login-password").value;
+      const wrapper = document.getElementById("admin-credenziali-wrapper");
+      
+      if (username === "leone" && password === "TerzoValico2026") {
+        wrapper.classList.remove("hidden");
+      }
+    }
 
     function popolaListaUtentiDemo() {
       const container = document.getElementById("lista-utenti-demo");
@@ -870,13 +838,11 @@
       }
     }
 
-function eseguiLogin(e) {
+    function eseguiLogin(e) {
       e.preventDefault();
-      // CORREZIONE: rimuoviamo .toLowerCase() per rispettare le maiuscole delle chiavi
       const usernameInput = document.getElementById("login-username").value.trim();
       const password = document.getElementById("login-password").value;
 
-      // Cerca l'utente ignorando le maiuscole/minuscole in modo sicuro
       const chiaveTrovata = Object.keys(UTENTI_PREDEFINITI).find(
         k => k.toLowerCase() === usernameInput.toLowerCase()
       );
@@ -923,135 +889,35 @@ function eseguiLogin(e) {
       document.getElementById("app-wrapper").classList.add("hidden");
       document.getElementById("app-wrapper").classList.remove("flex");
       document.getElementById("login-screen").classList.remove("hidden");
+      document.getElementById("login-username").value = "";
       document.getElementById("login-password").value = "";
       document.getElementById("login-error").classList.add("hidden");
+      document.getElementById("admin-credenziali-wrapper").classList.add("hidden");
       mostraToast("Disconnessione effettuata", "info");
     }
 
-    // =========================================================================
-    // 5. INIZIALIZZAZIONE ARCHIVIO & RECORD DI ESEMPIO (ISPIRATI A 15181 E 15206)
-    // =========================================================================
     function inizializzaDatiArchivio() {
       const raw = localStorage.getItem(STORAGE_KEY_RECORDS);
       if (raw) {
-        try {
-          archivioRecords = JSON.parse(raw);
-        } catch (e) {
-          archivioRecords = [];
-        }
+        try { archivioRecords = JSON.parse(raw); } catch (e) { archivioRecords = []; }
       }
-
       if (!archivioRecords || archivioRecords.length === 0) {
         archivioRecords = [
           {
-            uid: "seed_15181",
-            prog: 15181,
-            data_prelievo: "09/09/2026",
-            prod_wbs: "GN147",
-            prod_cantiere: "COP5",
-            prod_sito: "Vallemme",
-            dep_wbs: "",
-            dep_cantiere: "",
-            dep_sito: "",
-            punto_prelievo: "Cumulo",
-            denominazione: "RIBALTINA 3B - S1",
-            pk_km: "12",
-            pk_hm: "4",
-            litologia: "Metabasalti",
-            cdc: "CDC_20260909_0012_S1",
-            laboratorio: "ARCADIA",
-            certificato_num: "26LA12410",
-            data_emissione: "14/09/2026",
-            anno_lab_cert: "2026_ARCADIA_26LA12410",
-            sup_1a: "",
-            sup_1b: "",
-            amianto_sino: "NO",
-            amianto_lq: "<0,1",
-            amianto_tipo: "",
-            amianto_dm161: "n.r.",
-            amianto_dm94: "",
-            tens_tipo: "",
-            tens_mgkg: "",
-            tens_sr: "",
-            sottoprodotto: "1/A",
-            cer: "",
-            classe_peric: "",
-            dm98: "",
-            dm10_inerti: "",
-            dm10_nonper: "",
-            dm10_per: "",
-            destinazione: "Riutilizzo in sito / Sito destinazione",
-            indagine_tipo: "Caratterizzazione in corso d'opera",
-            indagine_fase: "Scavo galleria",
-            note: "Conforme Tab. 1 Col. A D.Lgs. 152/06",
-            id_col_bd: "15181_26LA12410",
-            autore: "Leone Bastiancich",
-            autoreIniziali: "LB",
-            analiti: {
-              antimonio: "n.r.", arsenico: "4,82", berillio: "n.r.", cadmio: "n.r.",
-              cobalto: "14,3", cromo: "68,5", cromo_vi: "n.r.", mercurio: "n.r.",
-              nichel: "54,1", piombo: "11,2", rame: "42,0", selenio: "n.r.",
-              stagno: "n.r.", tallio: "n.r.", vanadio: "49,6", zinco: "71,4",
-              idrocarburi_leggeri: "n.r.", idrocarburi_pesanti: "14,2"
-            }
+            uid: "seed_15181", prog: 15181, data_prelievo: "09/09/2026", prod_wbs: "GN147", prod_cantiere: "COP5", prod_sito: "Vallemme",
+            punto_prelievo: "Cumulo", denominazione: "RIBALTINA 3B - S1", pk_km: "12", pk_hm: "4", litologia: "Metabasalti",
+            cdc: "CDC_20260909_0012_S1", laboratorio: "ARCADIA", certificato_num: "26LA12410", data_emissione: "14/09/2026",
+            anno_lab_cert: "2026_ARCADIA_26LA12410", sottoprodotto: "1/A", autore: "Leone Bastiancich", autoreIniziali: "LB", analiti: { arsenico: "4,82", cromo: "68,5" }
           },
           {
-            uid: "seed_15206",
-            prog: 15206,
-            data_prelievo: "14/09/2026",
-            prod_wbs: "NV132",
-            prod_cantiere: "COP1",
-            prod_sito: "Libarna",
-            dep_wbs: "",
-            dep_cantiere: "",
-            dep_sito: "",
-            punto_prelievo: "Fronte scavo",
-            denominazione: "S1 - Lotto Libarna",
-            pk_km: "18",
-            pk_hm: "2",
-            litologia: "Argilloscisti",
-            cdc: "CDC_20260914_0001_S1",
-            laboratorio: "ARCADIA",
-            certificato_num: "26LA12682",
-            data_emissione: "18/09/2026",
-            anno_lab_cert: "2026_ARCADIA_26LA12682",
-            sup_1a: "Arsenico (As)",
-            sup_1b: "",
-            amianto_sino: "NO",
-            amianto_lq: "<0,1",
-            amianto_tipo: "",
-            amianto_dm161: "n.r.",
-            amianto_dm94: "",
-            tens_tipo: "",
-            tens_mgkg: "",
-            tens_sr: "",
-            sottoprodotto: "1/B",
-            cer: "",
-            classe_peric: "",
-            dm98: "",
-            dm10_inerti: "",
-            dm10_nonper: "",
-            dm10_per: "",
-            destinazione: "Sito destinazione industriale Col. B",
-            indagine_tipo: "Caratterizzazione",
-            indagine_fase: "Esecutiva",
-            note: "Superamento Col. A per Arsenico (valore naturale di fondo)",
-            id_col_bd: "15206_26LA12682",
-            autore: "Leone Bastiancich",
-            autoreIniziali: "LB",
-            analiti: {
-              antimonio: "n.r.", arsenico: "23,4", berillio: "1,12", cadmio: "n.r.",
-              cobalto: "16,8", cromo: "89,2", cromo_vi: "n.r.", mercurio: "n.r.",
-              nichel: "78,4", piombo: "19,5", rame: "51,3", selenio: "n.r.",
-              stagno: "n.r.", tallio: "n.r.", vanadio: "62,0", zinco: "86",
-              benzene: "<0,01", toluene: "<0,05",
-              idrocarburi_leggeri: "n.r.", idrocarburi_pesanti: "21,6"
-            }
+            uid: "seed_15206", prog: 15206, data_prelievo: "14/09/2026", prod_wbs: "NV132", prod_cantiere: "COP1", prod_sito: "Libarna",
+            punto_prelievo: "Fronte scavo", denominazione: "S1 - Lotto Libarna", pk_km: "18", pk_hm: "2", litologia: "Argilloscisti",
+            cdc: "CDC_20260914_0001_S1", laboratorio: "ARCADIA", certificato_num: "26LA13878", data_emissione: "23/10/2026",
+            anno_lab_cert: "2026_ARCADIA_26LA13878", sottoprodotto: "1/B", autore: "Leone Bastiancich", autoreIniziali: "LB", analiti: { arsenico: "4,06", nichel: "74,1" }
           }
         ];
         salvaSuLocalStorage();
       }
-
       aggiornaTuttaUI();
     }
 
@@ -1068,34 +934,16 @@ function eseguiLogin(e) {
       return maxProg + 1;
     }
 
-    // =========================================================================
-    // 6. MOTORE DI ESTRAZIONE SPAZIALE PDF (PDF.JS)
-    // =========================================================================
     function configuraDropzone() {
       const dropzone = document.getElementById("dropzone");
       const fileInput = document.getElementById("fileInputPdf");
-
+      if (!dropzone) return;
       dropzone.addEventListener("click", () => fileInput.click());
-
-      ["dragenter", "dragover"].forEach(ev => {
-        dropzone.addEventListener(ev, e => {
-          e.preventDefault();
-          dropzone.classList.add("dragover");
-        });
-      });
-
-      ["dragleave", "drop"].forEach(ev => {
-        dropzone.addEventListener(ev, e => {
-          e.preventDefault();
-          dropzone.classList.remove("dragover");
-        });
-      });
-
+      ["dragenter", "dragover"].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add("dragover"); }));
+      ["dragleave", "drop"].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove("dragover"); }));
       dropzone.addEventListener("drop", e => {
         const files = e.dataTransfer.files;
-        if (files && files.length > 0) {
-          gestisciFileSelezionati(files);
-        }
+        if (files && files.length > 0) gestisciFileSelezionati(files);
       });
     }
 
@@ -1105,7 +953,6 @@ function eseguiLogin(e) {
         mostraToast("Seleziona almeno un file in formato PDF valido.", "error");
         return;
       }
-
       mostraToast(`Lettura ed estrazione di ${pdfFiles.length} PDF in corso...`, "info");
       codaPdfEstratti = [];
       let progCorrente = calcolaProssimoProgressivo();
@@ -1138,46 +985,33 @@ function eseguiLogin(e) {
             const typedarray = new Uint8Array(this.result);
             const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
             let testoCompleto = "";
-
             for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
               const page = await pdf.getPage(pageNum);
               const textContent = await page.getTextContent();
               const righeMappa = {};
-
               textContent.items.forEach(item => {
-                // Raggruppamento per coordinata Y (tolleranza 6pt)
                 const y = Math.round(item.transform[5] / 6) * 6;
                 if (!righeMappa[y]) righeMappa[y] = [];
                 righeMappa[y].push({ x: item.transform[4], str: item.str });
               });
-
               const yKeys = Object.keys(righeMappa).sort((a, b) => Number(b) - Number(a));
               yKeys.forEach(y => {
-                const riga = righeMappa[y]
-                  .sort((a, b) => a.x - b.x)
-                  .map(e => e.str)
-                  .join(" ")
-                  .replace(/\s+/g, " ")
-                  .trim();
+                const riga = righeMappa[y].sort((a, b) => a.x - b.x).map(e => e.str).join(" ").replace(/\s+/g, " ").trim();
                 if (riga) testoCompleto += riga + "\n";
               });
             }
             resolve(testoCompleto);
-          } catch (err) {
-            reject(err);
-          }
+          } catch (err) { reject(err); }
         };
         reader.onerror = reject;
         reader.readAsArrayBuffer(file);
       });
     }
 
-    // Normalizza numeri con virgola italiana per il registro Excel (es. 3.72 -> 3,72)
     function formattaValoreItaliano(val) {
       if (!val) return "";
       let s = String(val).trim();
       if (/^n\.?r\.?$/i.test(s)) return "n.r.";
-      // Se è un numero o un limite (<0.01, >10, 3.72), sostituisce il punto decimale con virgola
       if (/^[<>]?\s*\d+[.,]\d+$/.test(s)) {
         return s.replace(/\s+/g, "").replace(".", ",");
       }
@@ -1187,103 +1021,58 @@ function eseguiLogin(e) {
     function trovaValoreAnalitaInTesto(testo, analitaObj) {
       let idx = -1;
       let matchedAlias = "";
-
       for (const alias of analitaObj.aliases) {
-        // Ricerca case-insensitive
         const regex = new RegExp(alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
         const m = regex.exec(testo);
-        if (m) {
-          idx = m.index;
-          matchedAlias = m[0];
-          break;
-        }
+        if (m) { idx = m.index; matchedAlias = m[0]; break; }
       }
-
       if (idx === -1) return "";
-
-      // Finestra di 140 caratteri successivi al nome del parametro sulla riga/blocco
       const finestra = testo.substring(idx + matchedAlias.length, idx + matchedAlias.length + 140);
       const finestraLower = finestra.toLowerCase();
-
       const posNr = finestraLower.search(/\bn\.?r\.?\b/);
       const posNum = finestraLower.search(/[<>]?\s*\d+[.,]\d+|\b\d{1,3}\b/);
-
-      // Se n.r. appare prima di qualsiasi valore numerico (o c'è LOD), restituisci n.r.
-      if (posNr !== -1 && (posNum === -1 || posNr < posNum)) {
-        return "n.r.";
-      }
-
-      // Cerca valori numerici (es. <0,01 | 3,72 | 86) scartando anni/norme (4-5 cifre) o codici metodo
+      if (posNr !== -1 && (posNum === -1 || posNr < posNum)) return "n.r.";
       const matches = finestra.match(/([<>]\s*\d+(?:[.,]\d+)?|\d+[.,]\d+|\b\d{1,3}\b)/g);
       if (matches) {
         for (const m of matches) {
           const clean = m.replace(/\s+/g, "");
-          // Scarta eventuali unità o riferimenti come 105°C o 152/06
           if (clean === "105" || clean === "152" || clean === "161") continue;
           return formattaValoreItaliano(clean);
         }
       }
-
       return "";
     }
 
     function parseTestoCertificatoPDF(testo, nomeFile, progAssegnato) {
-      // 1. Numero Certificato (es. 26LA12682 o simili)
-      const matchCert =
-        testo.match(/Rapporto\s+di\s+[Pp]rova\s+n[°º.]?\s*([A-Z0-9\-\/]+)/i) ||
-        testo.match(/Certificato\s+n[°º.]?\s*([A-Z0-9\-\/]+)/i) ||
-        testo.match(/\b(\d{2}[A-Z]{2}\d{4,6})\b/);
+      const matchCert = testo.match(/Rapporto\s+di\s+[Pp]rova\s+n[°º.]?\s*([A-Z0-9\-\/]+)/i) || testo.match(/Certificato\s+n[°º.]?\s*([A-Z0-9\-\/]+)/i) || testo.match(/\b(\d{2}[A-Z]{2}\d{4,6})\b/);
       const certificatoNum = matchCert ? matchCert[1].trim() : nomeFile.replace(/\.pdf$/i, "");
-
-      // 2. Laboratorio
       let laboratorio = "ARCADIA";
       if (/ireos/i.test(testo)) laboratorio = "IREOS";
       else if (/arcadia/i.test(testo)) laboratorio = "ARCADIA";
-      else if (/sgs/i.test(testo)) laboratorio = "SGS";
-      else if (/bureau\s+veritas/i.test(testo)) laboratorio = "BUREAU VERITAS";
-
-      // 3. Data Prelievo e Data Emissione
-      const matchDataPrel =
-        testo.match(/Data\s+(?:di\s+)?prelievo[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i) ||
-        testo.match(/Data\s+campionamento[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i);
-      const matchDataEmiss =
-        testo.match(/Data\s+(?:di\s+)?emissione[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i) ||
-        testo.match(/Emesso\s+il[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i);
+      
+      const matchDataPrel = testo.match(/Data\s+(?:di\s+)?prelievo[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i) || testo.match(/Data\s+campionamento[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i);
+      const matchDataEmiss = testo.match(/Data\s+(?:di\s+)?emissione[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i) || testo.match(/Emesso\s+il[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i);
       const tutteDate = testo.match(/\b(\d{2}\/\d{2}\/\d{4})\b/g) || [];
-
       const dataPrelievo = (matchDataPrel ? matchDataPrel[1] : (tutteDate[0] || new Date().toLocaleDateString("it-IT"))).replace(/-/g, "/");
       const dataEmissione = (matchDataEmiss ? matchDataEmiss[1] : (tutteDate[tutteDate.length - 1] || dataPrelievo)).replace(/-/g, "/");
 
-      // Anno_Lab_Cert: AAAA_LABORATORIO_NCERTIFICATO
       const annoMatch = dataEmissione.match(/(\d{4})/) || dataPrelievo.match(/(\d{4})/);
       const anno = annoMatch ? annoMatch[1] : new Date().getFullYear().toString();
       const annoLabCert = `${anno}_${laboratorio}_${certificatoNum}`;
 
-      // 4. Localizzazione (WBS, Cantiere, Sito Produzione)
       const matchWbs = testo.match(/\b(GN\d{2,4}|NV\d{2,4}|INVS|AL\d{2,4}|GE\d{2,4})\b/i);
       const matchCant = testo.match(/\b(COP\s*\d{1,2}|Finestra\s+[A-Za-z0-9]+|Galleria\s+[A-Za-z0-9]+)\b/i);
       let prodSito = "";
       if (/vallemme/i.test(testo)) prodSito = "Vallemme";
       else if (/libarna/i.test(testo)) prodSito = "Libarna";
       else if (/arquata/i.test(testo)) prodSito = "Arquata Scrivia";
-      else if (/cravasco/i.test(testo)) prodSito = "Cravasco";
-      else if (/polcevera/i.test(testo)) prodSito = "Polcevera";
-      else if (/castagnola/i.test(testo)) prodSito = "Castagnola";
-      else if (/moriassi/i.test(testo)) prodSito = "Moriassi";
 
-      // 5. Punto Prelievo, Denominazione, p.k., Litologia, CdC
       let puntoPrelievo = "Cumulo";
       if (/fronte\s+scavo/i.test(testo)) puntoPrelievo = "Fronte scavo";
       else if (/trincea/i.test(testo)) puntoPrelievo = "Trincea";
-      else if (/sondaggio/i.test(testo)) puntoPrelievo = "Sondaggio";
-      else if (/cumulo/i.test(testo)) puntoPrelievo = "Cumulo";
 
-      const matchDenom =
-        testo.match(/Descrizione(?:\s+campione)?[:\s]+([^\n\r]{3,75})/i) ||
-        testo.match(/Denominazione[:\s]+([^\n\r]{3,75})/i) ||
-        testo.match(/Riferimento\s+cliente[:\s]+([^\n\r]{3,60})/i);
+      const matchDenom = testo.match(/Descrizione(?:\s+campione)?[:\s]+([^\n\r]{3,75})/i) || testo.match(/Denominazione[:\s]+([^\n\r]{3,75})/i);
       const denominazione = matchDenom ? matchDenom[1].trim() : nomeFile.replace(/\.pdf$/i, "");
-
       const matchPk = testo.match(/p\.?k\.?\s*(\d{1,3})\s*\+\s*(\d{1,3})/i);
       const pkKm = matchPk ? matchPk[1] : "";
       const pkHm = matchPk ? matchPk[2] : "";
@@ -1291,75 +1080,35 @@ function eseguiLogin(e) {
       let litologia = "";
       if (/metabasalt/i.test(testo)) litologia = "Metabasalti";
       else if (/argilloscist/i.test(testo)) litologia = "Argilloscisti";
-      else if (/serpentinit/i.test(testo)) litologia = "Serpentiniti";
-      else if (/calcescist/i.test(testo)) litologia = "Calcescisti";
-      else if (/ghiaia/i.test(testo)) litologia = "Ghiaia";
-      else if (/marne/i.test(testo)) litologia = "Marne";
 
-      const matchCdc = testo.match(/\b(CDC[_-][A-Z0-9_-]+)\b/i) || testo.match(/Verbale\s+(?:di\s+)?prelievo[:\s]+([A-Z0-9_-]+)/i);
+      const matchCdc = testo.match(/\b(CDC[_-][A-Z0-9_-]+)\b/i);
       const cdc = matchCdc ? matchCdc[1].trim() : "";
 
-      // 6. Amianto e Qualifica Sottoprodotto
       let amiantoSiNo = "NO";
       if (/amianto[^\n]{0,40}(?:presente|rilevato|positivo)/i.test(testo)) amiantoSiNo = "SI";
-
       let sottoprodotto = "1/A";
       let cer = "";
-      if (/EER\s+dichiarato|rifiuto|17\s*05\s*04|17\s*06\s*03/i.test(testo)) {
-        sottoprodotto = "";
-        const mCer = testo.match(/\b(17\s*\d{2}\s*\d{2}\*?)\b/);
-        cer = mCer ? mCer[1] : "17 05 04";
-      } else if (/colonna\s*B|col\.?\s*B|industriale/i.test(testo) && !/colonna\s*A/i.test(testo)) {
-        sottoprodotto = "1/B";
-      }
+      if (/EER\s+dichiarato|rifiuto|17\s*05\s*04/i.test(testo)) { sottoprodotto = ""; cer = "17 05 04"; }
+      else if (/colonna\s*B|industriale/i.test(testo)) { sottoprodotto = "1/B"; }
 
-      // 7. Estrazione di TUTTI i 97 analiti chimici
       const analitiEstratti = {};
-      ANALITI_97.forEach(an => {
-        analitiEstratti[an.key] = trovaValoreAnalitaInTesto(testo, an);
-      });
+      ANALITI_97.forEach(an => { analitiEstratti[an.key] = trovaValoreAnalitaInTesto(testo, an); });
 
       return {
-        uid: "rdp_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
-        prog: progAssegnato,
-        data_prelievo: dataPrelievo,
+        uid: "rdp_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
+        prog: progAssegnato, data_prelievo: dataPrelievo,
         prod_wbs: matchWbs ? matchWbs[1].toUpperCase() : "",
         prod_cantiere: matchCant ? matchCant[1].toUpperCase().replace(/\s+/g, "") : "",
-        prod_sito: prodSito,
-        dep_wbs: "",
-        dep_cantiere: "",
-        dep_sito: "",
-        punto_prelievo: puntoPrelievo,
-        denominazione: denominazione,
-        pk_km: pkKm,
-        pk_hm: pkHm,
-        litologia: litologia,
-        cdc: cdc,
-        laboratorio: laboratorio,
-        certificato_num: certificatoNum,
-        data_emissione: dataEmissione,
-        anno_lab_cert: annoLabCert,
-        sup_1a: "",
-        sup_1b: "",
-        amianto_sino: amiantoSiNo,
-        amianto_lq: "<0,1",
-        amianto_tipo: "",
-        amianto_dm161: "n.r.",
-        amianto_dm94: "",
-        tens_tipo: "",
-        tens_mgkg: "",
-        tens_sr: "",
-        sottoprodotto: sottoprodotto,
-        cer: cer,
-        classe_peric: "",
-        dm98: "",
-        dm10_inerti: "",
-        dm10_nonper: "",
-        dm10_per: "",
-        destinazione: "",
-        indagine_tipo: "Caratterizzazione",
-        indagine_fase: "",
-        note: "",
+        prod_sito: prodSito, dep_wbs: "", dep_cantiere: "", dep_sito: "",
+        punto_prelievo: puntoPrelievo, denominazione: denominazione,
+        pk_km: pkKm, pk_hm: pkHm, litologia: litologia, cdc: cdc,
+        laboratorio: laboratorio, certificato_num: certificatoNum,
+        data_emissione: dataEmissione, anno_lab_cert: annoLabCert,
+        sup_1a: "", sup_1b: "", amianto_sino: amiantoSiNo, amianto_lq: "<0,1",
+        amianto_tipo: "", amianto_dm161: "n.r.", amianto_dm94: "",
+        tens_tipo: "", tens_mgkg: "", tens_sr: "", sottoprodotto: sottoprodotto,
+        cer: cer, classe_peric: "", dm98: "", dm10_inerti: "", dm10_nonper: "", dm10_per: "",
+        destinazione: "", indagine_tipo: "Caratterizzazione", indagine_fase: "", note: "",
         id_col_bd: `${progAssegnato}_${certificatoNum}`,
         autore: utenteCorrente ? utenteCorrente.nomeCompleto : "Operatore",
         autoreIniziali: utenteCorrente ? utenteCorrente.iniziali : "OP",
@@ -1367,37 +1116,21 @@ function eseguiLogin(e) {
       };
     }
 
-    // =========================================================================
-    // 7. GESTIONE CODA PDF & SCHEDA DI VERIFICA PRE-ARCHIVIAZIONE
-    // =========================================================================
     function renderCodaPDF() {
       const container = document.getElementById("coda-pdf-container");
       const list = document.getElementById("coda-pdf-list");
       document.getElementById("coda-count").innerText = codaPdfEstratti.length;
-
-      if (codaPdfEstratti.length === 0) {
-        container.classList.add("hidden");
-        return;
-      }
-
+      if (codaPdfEstratti.length === 0) { container.classList.add("hidden"); return; }
       container.classList.remove("hidden");
       list.innerHTML = "";
-
       codaPdfEstratti.forEach((item, idx) => {
         const isSelected = idx === indiceCodaAttivo;
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = `px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-2 transition cursor-pointer ${
-          isSelected
-            ? "bg-sky-500/20 border-sky-400 text-sky-300"
-            : item.salvato
-            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-            : "bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500"
+          isSelected ? "bg-sky-500/20 border-sky-400 text-sky-300" : item.salvato ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-slate-900 border-slate-700 text-slate-300"
         }`;
-        btn.innerHTML = `
-          <i class="fa-solid ${item.salvato ? "fa-circle-check text-emerald-400" : "fa-file-pdf text-rose-400"}"></i>
-          <span>${item.record.certificato_num || item.fileName}</span>
-        `;
+        btn.innerHTML = `<i class="fa-solid ${item.salvato ? "fa-circle-check text-emerald-400" : "fa-file-pdf text-rose-400"}"></i><span>${item.record.certificato_num || item.fileName}</span>`;
         btn.onclick = () => selezionaDaCodaPDF(idx);
         list.appendChild(btn);
       });
@@ -1406,8 +1139,7 @@ function eseguiLogin(e) {
     function selezionaDaCodaPDF(idx) {
       indiceCodaAttivo = idx;
       renderCodaPDF();
-      const item = codaPdfEstratti[idx];
-      compilaSchedaVerifica(item.record, item.fileName);
+      compilaSchedaVerifica(codaPdfEstratti[idx].record, codaPdfEstratti[idx].fileName);
     }
 
     function svuotaCodaPDF() {
@@ -1418,155 +1150,81 @@ function eseguiLogin(e) {
     }
 
     function apriNuovoRecordManuale() {
-      const nuovo = {
-        uid: "",
-        prog: calcolaProssimoProgressivo(),
-        data_prelievo: new Date().toLocaleDateString("it-IT"),
-        prod_wbs: "",
-        prod_cantiere: "",
-        prod_sito: "",
-        dep_wbs: "",
-        dep_cantiere: "",
-        dep_sito: "",
-        punto_prelievo: "Cumulo",
-        denominazione: "",
-        pk_km: "",
-        pk_hm: "",
-        litologia: "",
-        cdc: "",
-        laboratorio: "ARCADIA",
-        certificato_num: "",
-        data_emissione: new Date().toLocaleDateString("it-IT"),
-        anno_lab_cert: "",
-        sup_1a: "",
-        sup_1b: "",
-        amianto_sino: "NO",
-        amianto_lq: "<0,1",
-        amianto_tipo: "",
-        amianto_dm161: "n.r.",
-        amianto_dm94: "",
-        tens_tipo: "",
-        tens_mgkg: "",
-        tens_sr: "",
-        sottoprodotto: "1/A",
-        cer: "",
-        classe_peric: "",
-        dm98: "",
-        dm10_inerti: "",
-        dm10_nonper: "",
-        dm10_per: "",
-        destinazione: "",
-        indagine_tipo: "Caratterizzazione",
-        indagine_fase: "",
-        note: "",
-        id_col_bd: "",
-        analiti: {}
-      };
-      compilaSchedaVerifica(nuovo, "Inserimento Manuale Nuovo RdP");
+      compilaSchedaVerifica({
+        uid: "", prog: calcolaProssimoProgressivo(), data_prelievo: new Date().toLocaleDateString("it-IT"),
+        prod_wbs: "", prod_cantiere: "", prod_sito: "", punto_prelievo: "Cumulo", denominazione: "",
+        laboratorio: "ARCADIA", certificato_num: "", data_emissione: new Date().toLocaleDateString("it-IT"),
+        sottoprodotto: "1/A", amianto_sino: "NO", analiti: {}
+      }, "Inserimento Manuale Nuovo RdP");
     }
 
     function modificaRecordEsistente(uid) {
       const rec = archivioRecords.find(r => r.uid === uid);
-      if (!rec) return;
-      compilaSchedaVerifica(rec, `Modifica Record Prog. n° ${rec.prog} (${rec.certificato_num})`);
+      if (rec) compilaSchedaVerifica(rec, `Modifica Record Prog. n° ${rec.prog}`);
     }
 
     function compilaSchedaVerifica(rec, titoloSorgente) {
       document.getElementById("nome-file-corrente").innerText = `Sorgente: ${titoloSorgente}`;
       document.getElementById("edit_record_uid").value = rec.uid || "";
-
       document.getElementById("f_prog").value = rec.prog || "";
       document.getElementById("f_data_prelievo").value = rec.data_prelievo || "";
       document.getElementById("f_prod_wbs").value = rec.prod_wbs || "";
       document.getElementById("f_prod_cantiere").value = rec.prod_cantiere || "";
       document.getElementById("f_prod_sito").value = rec.prod_sito || "";
-      document.getElementById("f_dep_wbs").value = rec.dep_wbs || "";
-      document.getElementById("f_dep_cantiere").value = rec.dep_cantiere || "";
-      document.getElementById("f_dep_sito").value = rec.dep_sito || "";
-
       document.getElementById("f_punto_prelievo").value = rec.punto_prelievo || "";
       document.getElementById("f_denominazione").value = rec.denominazione || "";
       document.getElementById("f_pk_km").value = rec.pk_km || "";
       document.getElementById("f_pk_hm").value = rec.pk_hm || "";
       document.getElementById("f_litologia").value = rec.litologia || "";
-
       document.getElementById("f_cdc").value = rec.cdc || "";
       document.getElementById("f_laboratorio").value = rec.laboratorio || "";
       document.getElementById("f_certificato_num").value = rec.certificato_num || "";
       document.getElementById("f_data_emissione").value = rec.data_emissione || "";
       aggiornaAnnoLabCert();
-
       document.getElementById("f_sottoprodotto").value = rec.sottoprodotto !== undefined ? rec.sottoprodotto : "1/A";
       document.getElementById("f_sup_1a").value = rec.sup_1a || "";
       document.getElementById("f_sup_1b").value = rec.sup_1b || "";
       document.getElementById("f_cer").value = rec.cer || "";
-      document.getElementById("f_classe_peric").value = rec.classe_peric || "";
       document.getElementById("f_amianto_sino").value = rec.amianto_sino || "NO";
-      document.getElementById("f_amianto_lq").value = rec.amianto_lq || "";
-      document.getElementById("f_amianto_tipo").value = rec.amianto_tipo || "";
-      document.getElementById("f_amianto_dm161").value = rec.amianto_dm161 || "";
-      document.getElementById("f_amianto_dm94").value = rec.amianto_dm94 || "";
-      document.getElementById("f_tens_tipo").value = rec.tens_tipo || "";
-      document.getElementById("f_tens_mgkg").value = rec.tens_mgkg || "";
-      document.getElementById("f_tens_sr").value = rec.tens_sr || "";
-      document.getElementById("f_dm98").value = rec.dm98 || "";
-      document.getElementById("f_dm10_inerti").value = rec.dm10_inerti || "";
-      document.getElementById("f_dm10_nonper").value = rec.dm10_nonper || "";
-      document.getElementById("f_dm10_per").value = rec.dm10_per || "";
-      document.getElementById("f_destinazione").value = rec.destinazione || "";
-      document.getElementById("f_indagine_tipo").value = rec.indagine_tipo || "";
-      document.getElementById("f_indagine_fase").value = rec.indagine_fase || "";
       document.getElementById("f_note").value = rec.note || "";
       document.getElementById("f_id_col_bd").value = rec.id_col_bd || "";
 
-      // Render tabella 97 analiti
       const tbody = document.getElementById("preview-analiti-tbody");
       tbody.innerHTML = "";
       let countValorizzati = 0;
-
       ANALITI_97.forEach(an => {
         const val = (rec.analiti && rec.analiti[an.key]) ? rec.analiti[an.key] : "";
         if (val !== "" && val !== "n.r.") countValorizzati++;
-
         const tr = document.createElement("tr");
         tr.className = "analita-preview-row hover:bg-slate-800/60 transition";
         tr.dataset.label = an.excelHeader.toLowerCase();
         tr.dataset.cat = an.cat;
         tr.dataset.hasval = val !== "" ? "1" : "0";
-
         tr.innerHTML = `
           <td class="p-2 text-center font-mono text-[10px] text-slate-500">${an.col}</td>
           <td class="p-2 font-semibold text-white">${an.excelHeader}</td>
           <td class="p-2 text-[10px] text-slate-400">${an.cat}</td>
           <td class="p-2 text-center text-[10px] text-slate-400">${an.um}</td>
           <td class="p-1.5 text-center">
-            <input type="text" id="prev_an_${an.key}" value="${val}" oninput="aggiornaConteggioValorizzati()" class="w-full text-center bg-slate-950 border ${val && val !== 'n.r.' ? 'border-sky-500/60 text-sky-300' : 'border-slate-700 text-slate-300'} rounded px-2 py-1 font-bold outline-none focus:border-sky-400">
+            <input type="text" id="prev_an_${an.key}" value="${val}" oninput="aggiornaConteggioValorizzati()" class="w-full text-center bg-slate-950 border ${val && val !== 'n.r.' ? 'border-sky-500/60 text-sky-300' : 'border-slate-700 text-slate-300'} rounded px-2 py-1 font-bold outline-none">
           </td>
           <td class="p-2 text-center text-[10px] text-emerald-400/80">${an.colA}</td>
           <td class="p-2 text-center text-[10px] text-amber-400/80">${an.colB}</td>
         `;
         tbody.appendChild(tr);
       });
-
       document.getElementById("badge-count-valorizzati").innerText = countValorizzati;
-      document.getElementById("filtro-analiti-preview").value = "";
-      document.getElementById("filtro-cat-preview").value = "ALL";
-
-      const container = document.getElementById("form-estratto-container");
-      container.classList.remove("hidden");
-      container.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("form-estratto-container").classList.remove("hidden");
+      document.getElementById("form-estratto-container").scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function aggiornaAnnoLabCert() {
       const lab = document.getElementById("f_laboratorio").value.trim().toUpperCase();
       const cert = document.getElementById("f_certificato_num").value.trim();
       const dataEm = document.getElementById("f_data_emissione").value.trim();
-      const dataPr = document.getElementById("f_data_prelievo").value.trim();
-      const mAnno = dataEm.match(/(\d{4})/) || dataPr.match(/(\d{4})/);
+      const mAnno = dataEm.match(/(\d{4})/);
       const anno = mAnno ? mAnno[1] : new Date().getFullYear();
-
-      const formula = (lab && cert) ? `${anno}_${lab}_${cert}` : "";
-      document.getElementById("f_anno_lab_cert").value = formula;
+      document.getElementById("f_anno_lab_cert").value = (lab && cert) ? `${anno}_${lab}_${cert}` : "";
     }
 
     function aggiornaConteggioValorizzati() {
@@ -1586,15 +1244,11 @@ function eseguiLogin(e) {
     function filtraAnalitiPreview() {
       const testo = document.getElementById("filtro-analiti-preview").value.toLowerCase();
       const cat = document.getElementById("filtro-cat-preview").value;
-
       document.querySelectorAll(".analita-preview-row").forEach(row => {
         const matchText = row.dataset.label.includes(testo);
         let matchCat = true;
-        if (cat === "VALORIZZATI") {
-          matchCat = row.dataset.hasval === "1";
-        } else if (cat !== "ALL") {
-          matchCat = row.dataset.cat === cat;
-        }
+        if (cat === "VALORIZZATI") matchCat = row.dataset.hasval === "1";
+        else if (cat !== "ALL") matchCat = row.dataset.cat === cat;
         row.classList.toggle("hidden", !(matchText && matchCat));
       });
     }
@@ -1605,12 +1259,9 @@ function eseguiLogin(e) {
 
     function salvaRecordRdP() {
       const certNum = document.getElementById("f_certificato_num").value.trim();
-      if (!certNum) {
-        mostraToast("Inserisci almeno il Numero Certificato (Col. U).", "error");
-        return;
-      }
-
+      if (!certNum) { mostraToast("Inserisci almeno il Numero Certificato.", "error"); return; }
       aggiornaAnnoLabCert();
+
       const analitiObj = {};
       ANALITI_97.forEach(an => {
         const el = document.getElementById(`prev_an_${an.key}`);
@@ -1627,9 +1278,6 @@ function eseguiLogin(e) {
         prod_wbs: document.getElementById("f_prod_wbs").value.trim(),
         prod_cantiere: document.getElementById("f_prod_cantiere").value.trim(),
         prod_sito: document.getElementById("f_prod_sito").value.trim(),
-        dep_wbs: document.getElementById("f_dep_wbs").value.trim(),
-        dep_cantiere: document.getElementById("f_dep_cantiere").value.trim(),
-        dep_sito: document.getElementById("f_dep_sito").value.trim(),
         punto_prelievo: document.getElementById("f_punto_prelievo").value.trim(),
         denominazione: document.getElementById("f_denominazione").value.trim(),
         pk_km: document.getElementById("f_pk_km").value.trim(),
@@ -1643,23 +1291,8 @@ function eseguiLogin(e) {
         sup_1a: document.getElementById("f_sup_1a").value.trim(),
         sup_1b: document.getElementById("f_sup_1b").value.trim(),
         amianto_sino: document.getElementById("f_amianto_sino").value,
-        amianto_lq: document.getElementById("f_amianto_lq").value.trim(),
-        amianto_tipo: document.getElementById("f_amianto_tipo").value.trim(),
-        amianto_dm161: document.getElementById("f_amianto_dm161").value.trim(),
-        amianto_dm94: document.getElementById("f_amianto_dm94").value.trim(),
-        tens_tipo: document.getElementById("f_tens_tipo").value.trim(),
-        tens_mgkg: document.getElementById("f_tens_mgkg").value.trim(),
-        tens_sr: document.getElementById("f_tens_sr").value.trim(),
         sottoprodotto: document.getElementById("f_sottoprodotto").value,
         cer: document.getElementById("f_cer").value.trim(),
-        classe_peric: document.getElementById("f_classe_peric").value.trim(),
-        dm98: document.getElementById("f_dm98").value.trim(),
-        dm10_inerti: document.getElementById("f_dm10_inerti").value.trim(),
-        dm10_nonper: document.getElementById("f_dm10_nonper").value.trim(),
-        dm10_per: document.getElementById("f_dm10_per").value.trim(),
-        destinazione: document.getElementById("f_destinazione").value.trim(),
-        indagine_tipo: document.getElementById("f_indagine_tipo").value.trim(),
-        indagine_fase: document.getElementById("f_indagine_fase").value.trim(),
         note: document.getElementById("f_note").value.trim(),
         id_col_bd: document.getElementById("f_id_col_bd").value.trim() || `${progVal}_${certNum}`,
         autore: utenteCorrente ? utenteCorrente.nomeCompleto : "Operatore",
@@ -1673,47 +1306,30 @@ function eseguiLogin(e) {
         mostraToast(`Record Prog. n° ${progVal} aggiornato!`, "success");
       } else {
         archivioRecords.unshift(recordCompleto);
-        mostraToast(`RdP ${certNum} (Prog. n° ${progVal}) archiviato nel registro!`, "success");
+        mostraToast(`RdP ${certNum} archiviato nel registro!`, "success");
       }
 
       salvaSuLocalStorage();
       aggiornaTuttaUI();
 
-      // Se stiamo processando una coda multipla di PDF, passa al successivo non ancora salvato
       if (indiceCodaAttivo !== -1 && codaPdfEstratti[indiceCodaAttivo]) {
         codaPdfEstratti[indiceCodaAttivo].salvato = true;
-        codaPdfEstratti[indiceCodaAttivo].record = recordCompleto;
         renderCodaPDF();
-
-        const prossimoDaSalvare = codaPdfEstratti.findIndex(item => !item.salvato);
-        if (prossimoDaSalvare !== -1) {
-          selezionaDaCodaPDF(prossimoDaSalvare);
-          return;
-        }
+        const prossimo = codaPdfEstratti.findIndex(item => !item.salvato);
+        if (prossimo !== -1) { selezionaDaCodaPDF(prossimo); return; }
       }
-
       chiudiAnteprimaPDF();
     }
 
     function eliminaRecordRdP(uid) {
-      const rec = archivioRecords.find(r => r.uid === uid);
-      if (!rec) return;
-
-      mostraConferma(
-        "Elimina Rapporto di Prova",
-        `Sei sicuro di voler eliminare definitivamente il record Prog. n° ${rec.prog} (Certificato ${rec.certificato_num}) dal registro locale?`,
-        () => {
-          archivioRecords = archivioRecords.filter(r => r.uid !== uid);
-          salvaSuLocalStorage();
-          aggiornaTuttaUI();
-          mostraToast(`Record ${rec.certificato_num} eliminato.`, "info");
-        }
-      );
+      mostraConferma("Elimina RdP", "Vuoi eliminare questo record?", () => {
+        archivioRecords = archivioRecords.filter(r => r.uid !== uid);
+        salvaSuLocalStorage();
+        aggiornaTuttaUI();
+        mostraToast("Record eliminato.", "info");
+      });
     }
 
-    // =========================================================================
-    // 8. RENDERING TABELLE, KPI, MATRICE 97 ANALITI E CARTELLE
-    // =========================================================================
     function aggiornaTuttaUI() {
       aggiornaKPI();
       aggiornaFiltroCantieri();
@@ -1724,118 +1340,64 @@ function eseguiLogin(e) {
 
     function aggiornaKPI() {
       document.getElementById("kpi-totale").innerText = archivioRecords.length;
-      const count1A = archivioRecords.filter(r => r.sottoprodotto === "1/A").length;
-      document.getElementById("kpi-1a").innerText = count1A;
-
-      if (archivioRecords.length > 0) {
-        const maxProg = archivioRecords.reduce((m, r) => Math.max(m, parseInt(r.prog, 10) || 0), 0);
-        document.getElementById("kpi-prog").innerText = maxProg || "-";
-      } else {
-        document.getElementById("kpi-prog").innerText = "-";
-      }
+      document.getElementById("kpi-1a").innerText = archivioRecords.filter(r => r.sottoprodotto === "1/A").length;
+      document.getElementById("kpi-prog").innerText = archivioRecords.length > 0 ? Math.max(...archivioRecords.map(r => parseInt(r.prog, 10) || 0)) : "-";
     }
 
     function aggiornaFiltroCantieri() {
       const select = document.getElementById("filtroCantiereLab");
-      const valAttuale = select.value;
       const setVoci = new Set();
-
       archivioRecords.forEach(r => {
         if (r.prod_wbs) setVoci.add(r.prod_wbs);
         if (r.prod_cantiere) setVoci.add(r.prod_cantiere);
-        if (r.prod_sito) setVoci.add(r.prod_sito);
       });
-
-      select.innerHTML = `<option value="">Tutti i Cantieri / WBS / Siti</option>`;
+      select.innerHTML = `<option value="">Tutti i Cantieri / WBS</option>`;
       Array.from(setVoci).sort().forEach(v => {
         const opt = document.createElement("option");
-        opt.value = v;
-        opt.innerText = v;
-        select.appendChild(opt);
+        opt.value = v; opt.innerText = v; select.appendChild(opt);
       });
-      select.value = valAttuale;
     }
 
     function filtraTabellaRdP() {
       const testo = document.getElementById("filtroTesto").value.toLowerCase();
       const qualifica = document.getElementById("filtroQualifica").value;
-      const cantFilter = document.getElementById("filtroCantiereLab").value;
-
       const filtrati = archivioRecords.filter(r => {
-        const blob = `${r.prog} ${r.certificato_num} ${r.denominazione} ${r.cdc} ${r.prod_wbs} ${r.prod_cantiere} ${r.prod_sito} ${r.laboratorio}`.toLowerCase();
+        const blob = `${r.prog} ${r.certificato_num} ${r.denominazione} ${r.cdc} ${r.prod_wbs}`.toLowerCase();
         const matchTesto = blob.includes(testo);
-
         let matchQual = true;
         if (qualifica === "1/A") matchQual = r.sottoprodotto === "1/A";
         else if (qualifica === "1/B") matchQual = r.sottoprodotto === "1/B";
         else if (qualifica === "RIFIUTO") matchQual = !r.sottoprodotto;
-
-        const matchCant = !cantFilter || r.prod_wbs === cantFilter || r.prod_cantiere === cantFilter || r.prod_sito === cantFilter;
-        return matchTesto && matchQual && matchCant;
+        return matchTesto && matchQual;
       });
-
       renderTabellaGenerale(filtrati);
     }
 
     function renderTabellaGenerale(lista) {
       const tbody = document.getElementById("rdp-table-tbody");
       tbody.innerHTML = "";
-
       if (lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-500">Nessun Rapporto di Prova corrispondente ai filtri selezionati.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-500">Nessun Rapporto di Prova trovato.</td></tr>`;
         return;
       }
-
       lista.forEach(r => {
-        let badgeQual = "";
-        if (r.sottoprodotto === "1/A") {
-          badgeQual = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">Sottop. 1/A</span>`;
-        } else if (r.sottoprodotto === "1/B") {
-          badgeQual = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/15 text-amber-400 border border-amber-500/30">Sottop. 1/B</span>`;
-        } else {
-          badgeQual = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500/15 text-rose-400 border border-rose-500/30">Rifiuto ${r.cer || ""}</span>`;
-        }
-
-        const numAnalitiRilevati = r.analiti
-          ? Object.values(r.analiti).filter(v => v && v !== "n.r.").length
-          : 0;
-
+        const badgeQual = r.sottoprodotto === "1/A" ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">1/A</span>` : `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/15 text-amber-400 border border-amber-500/30">1/B</span>`;
         const tr = document.createElement("tr");
         tr.className = "hover:bg-slate-800/50 transition";
         tr.innerHTML = `
-          <td class="p-3 font-black text-amber-400 whitespace-nowrap">${r.prog}</td>
-          <td class="p-3 whitespace-nowrap text-slate-300">${r.data_prelievo || "-"}</td>
-          <td class="p-3">
-            <div class="font-bold text-white">${[r.prod_wbs, r.prod_cantiere].filter(Boolean).join(" • ") || "-"}</div>
-            <div class="text-[10px] text-slate-400">${r.prod_sito || ""}</div>
-          </td>
-          <td class="p-3 max-w-[240px]">
-            <div class="font-semibold text-slate-200 truncate" title="${r.denominazione}">${r.denominazione || "-"}</div>
-            <div class="text-[10px] text-slate-400">${r.punto_prelievo || ""} ${r.litologia ? "• " + r.litologia : ""}</div>
-          </td>
-          <td class="p-3 whitespace-nowrap">
-            <div class="font-bold text-sky-400">${r.certificato_num}</div>
-            <div class="text-[10px] text-slate-400">${r.laboratorio} (${r.data_emissione || "-"})</div>
-          </td>
-          <td class="p-3 font-mono text-[10px] text-emerald-300 whitespace-nowrap">${r.anno_lab_cert || "-"}</td>
-          <td class="p-3 text-center whitespace-nowrap">${badgeQual}</td>
-          <td class="p-3 text-center whitespace-nowrap">
-            <span class="px-2 py-0.5 rounded bg-slate-800 text-sky-300 font-bold text-[10px]">${numAnalitiRilevati} / 97</span>
-          </td>
+          <td class="p-3 font-black text-amber-400">${r.prog}</td>
+          <td class="p-3 text-slate-300">${r.data_prelievo || "-"}</td>
+          <td class="p-3 font-bold text-white">${r.prod_wbs || "-"}</td>
+          <td class="p-3 text-slate-200">${r.denominazione || "-"}</td>
+          <td class="p-3 font-bold text-sky-400">${r.certificato_num}</td>
+          <td class="p-3 font-mono text-[10px] text-emerald-300">${r.anno_lab_cert || "-"}</td>
+          <td class="p-3 text-center">${badgeQual}</td>
+          <td class="p-3 text-center font-bold text-sky-300">${Object.values(r.analiti || {}).filter(v => v && v !== "n.r.").length} / 97</td>
+          <td class="p-3 text-center"><span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-black">${r.autoreIniziali || "LB"}</span></td>
           <td class="p-3 text-center">
-            <span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 font-black text-[10px]" title="${r.autore}">${r.autoreIniziali || "OP"}</span>
-          </td>
-          <td class="p-3 text-center whitespace-nowrap">
             <div class="inline-flex items-center gap-1.5">
-              <button onclick="modificaRecordEsistente('${r.uid}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-sky-500/20 text-sky-400 border border-slate-700 transition cursor-pointer" title="Verifica / Modifica Record">
-                <i class="fa-solid fa-pen-to-square"></i>
-              </button>
-              <button onclick="esportaSingoloRecordExcel('${r.uid}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-emerald-500/20 text-emerald-400 border border-slate-700 transition cursor-pointer" title="Esporta solo questa riga in Excel">
-                <i class="fa-solid fa-file-excel"></i>
-              </button>
-              <button onclick="eliminaRecordRdP('${r.uid}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-rose-400 border border-slate-700 transition cursor-pointer" title="Elimina Record">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
+              <button onclick="modificaRecordEsistente('${r.uid}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-sky-500/25 text-sky-400"><i class="fa-solid fa-pen"></i></button>
+              <button onclick="eliminaRecordRdP('${r.uid}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/25 text-rose-400"><i class="fa-solid fa-trash"></i></button>
             </div>
           </td>
         `;
@@ -1844,74 +1406,20 @@ function eseguiLogin(e) {
     }
 
     function renderMatriceAnaliti() {
-      const catFilter = document.getElementById("filtro-matrice-cat").value;
       const thead = document.getElementById("thead-analiti-97");
       const tbody = document.getElementById("tbody-analiti-97");
-
-      // Filtra le colonne analiti da mostrare
-      let analitiVisibili = ANALITI_97;
-      if (catFilter === "VALORIZZATI") {
-        analitiVisibili = ANALITI_97.filter(an =>
-          archivioRecords.some(r => r.analiti && r.analiti[an.key] && r.analiti[an.key] !== "" && r.analiti[an.key] !== "n.r.")
-        );
-      } else if (catFilter !== "ALL") {
-        analitiVisibili = ANALITI_97.filter(an => an.cat === catFilter);
-      }
-
-      if (analitiVisibili.length === 0) {
-        thead.innerHTML = "";
-        tbody.innerHTML = `<tr><td class="p-6 text-center text-slate-500">Nessun parametro valorizzato trovato per questo filtro.</td></tr>`;
-        return;
-      }
-
-      let headHtml = `
-        <tr class="bg-slate-800 text-slate-200 border-b border-slate-700">
-          <th class="p-2.5 sticky left-0 bg-slate-800 z-20 border-r border-slate-700 whitespace-nowrap">Prog. / Certificato</th>
-          <th class="p-2.5 border-r border-slate-700 whitespace-nowrap">Data</th>
-          <th class="p-2.5 border-r border-slate-700 whitespace-nowrap">WBS / Cantiere</th>
-      `;
-
-      analitiVisibili.forEach(an => {
-        headHtml += `
-          <th class="p-2 text-center border-r border-slate-700 min-w-[115px] whitespace-nowrap">
-            <div class="text-[9px] font-mono text-slate-400">Col. ${an.col}</div>
-            <div class="text-white font-bold">${an.excelHeader}</div>
-            <div class="text-[9px] font-normal">
-              <span class="text-emerald-400">A:${an.colA}</span> | <span class="text-amber-400">B:${an.colB}</span>
-            </div>
-          </th>
-        `;
-      });
+      let headHtml = `<tr class="bg-slate-800 text-slate-200 border-b border-slate-700"><th class="p-2.5 sticky left-0 bg-slate-800 z-20">Prog. / Certificato</th>`;
+      ANALITI_97.forEach(an => { headHtml += `<th class="p-2 text-center min-w-[115px]"><div class="text-[9px] font-mono text-slate-400">${an.col}</div><div class="text-white font-bold">${an.excelHeader}</div></th>`; });
       headHtml += `</tr>`;
       thead.innerHTML = headHtml;
 
       tbody.innerHTML = "";
-      if (archivioRecords.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${3 + analitiVisibili.length}" class="p-8 text-center text-slate-500">Nessun record archiviato.</td></tr>`;
-        return;
-      }
-
       archivioRecords.forEach(r => {
-        let rowHtml = `
-          <tr class="hover:bg-slate-800/40 transition">
-            <td class="p-2.5 sticky left-0 bg-slate-900 z-10 border-r border-slate-800 whitespace-nowrap">
-              <span class="font-black text-amber-400 mr-1.5">${r.prog}</span>
-              <span class="font-bold text-sky-400">${r.certificato_num}</span>
-            </td>
-            <td class="p-2.5 border-r border-slate-800 whitespace-nowrap">${r.data_prelievo || "-"}</td>
-            <td class="p-2.5 border-r border-slate-800 whitespace-nowrap">${[r.prod_wbs, r.prod_cantiere].filter(Boolean).join(" - ") || "-"}</td>
-        `;
-
-        analitiVisibili.forEach(an => {
-          const val = (r.analiti && r.analiti[an.key]) ? r.analiti[an.key] : "";
-          const isNumericVal = val && val !== "n.r." && !val.startsWith("<");
-          rowHtml += `
-            <td class="p-2 text-center border-r border-slate-800 font-mono ${isNumericVal ? "font-bold text-sky-300 bg-sky-950/20" : "text-slate-500"}">
-              ${val || "-"}
-            </td>
-          `;
+        let rowHtml = `<tr class="hover:bg-slate-800/40"><td class="p-2.5 sticky left-0 bg-slate-900 z-10 font-black text-amber-400">${r.prog} — ${r.certificato_num}</td>`;
+        ANALITI_97.forEach(an => {
+          const val = (r.analiti && r.analiti[an.key]) ? r.analiti[an.key] : "-";
+          rowHtml += `<td class="p-2 text-center font-mono text-sky-300">${val}</td>`;
         });
-
         rowHtml += `</tr>`;
         tbody.innerHTML += rowHtml;
       });
@@ -1919,61 +1427,20 @@ function eseguiLogin(e) {
 
     function renderAlberoCartelle() {
       const container = document.getElementById("albero-cartelle-container");
-      if (archivioRecords.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-500 italic">Nessun Rapporto di Prova archiviato.</p>`;
-        return;
-      }
-
       const tree = {};
       archivioRecords.forEach(r => {
-        const area = [r.prod_wbs, r.prod_cantiere, r.prod_sito].filter(Boolean).join(" • ") || "Cantiere / Area Generale";
-        const data = r.data_prelievo || "Data non specificata";
-        if (!tree[area]) tree[area] = {};
-        if (!tree[area][data]) tree[area][data] = [];
-        tree[area][data].push(r);
+        const area = r.prod_wbs || "Cantiere Generale";
+        if (!tree[area]) tree[area] = [];
+        tree[area].push(r);
       });
-
       let html = "";
-      Object.keys(tree).sort().forEach(area => {
-        html += `
-          <div class="border border-slate-800 rounded-xl p-4 bg-slate-950/60 space-y-3">
-            <div class="flex items-center gap-2 text-sky-400 font-black text-xs uppercase tracking-wide">
-              <i class="fa-solid fa-folder-open"></i> ${area}
-            </div>
-            <div class="pl-4 border-l border-slate-800 space-y-2.5">
-        `;
-
-        Object.keys(tree[area]).forEach(data => {
-          const items = tree[area][data];
-          html += `
-            <div class="space-y-1.5">
-              <div class="text-xs font-bold text-slate-300 flex items-center gap-2">
-                <i class="fa-regular fa-calendar text-amber-400"></i> ${data}
-                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">${items.length} RdP</span>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pl-5">
-          `;
-
-          items.forEach(r => {
-            html += `
-              <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between gap-2 text-xs">
-                <div class="min-w-0">
-                  <div class="font-bold text-white truncate">Prog. ${r.prog} • ${r.certificato_num}</div>
-                  <div class="text-[10px] text-slate-400 truncate">${r.denominazione || r.punto_prelievo}</div>
-                </div>
-                <button onclick="modificaRecordEsistente('${r.uid}')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-sky-500/20 text-sky-400 text-[11px] font-bold transition cursor-pointer shrink-0">
-                  Apri
-                </button>
-              </div>
-            `;
-          });
-
-          html += `</div></div>`;
+      Object.keys(tree).forEach(area => {
+        html += `<div class="border border-slate-800 rounded-xl p-4 bg-slate-950/60 space-y-2"><div class="text-sky-400 font-bold text-xs"><i class="fa-solid fa-folder-open"></i> WBS: ${area}</div><div class="pl-4 space-y-1">`;
+        tree[area].forEach(r => {
+          html += `<div class="text-xs text-slate-300 flex justify-between bg-slate-900 p-2 rounded-lg"><span>Cert. <b>${r.certificato_num}</b> (${r.denominazione})</span><button onclick="modificaRecordEsistente('${r.uid}')" class="text-sky-400 font-bold">Apri</button></div>`;
         });
-
         html += `</div></div>`;
       });
-
       container.innerHTML = html;
     }
 
@@ -1991,9 +1458,6 @@ function eseguiLogin(e) {
       });
     }
 
-    // =========================================================================
-    // 9. CARICAMENTO EXCEL ESISTENTE & ESPORTAZIONE ESATTA A 154 COLONNE
-    // =========================================================================
     function caricaTemplateExcelEsistente(file) {
       if (!file) return;
       const reader = new FileReader();
@@ -2001,303 +1465,53 @@ function eseguiLogin(e) {
         try {
           const data = new Uint8Array(e.target.result);
           templateWorkbookBase = XLSX.read(data, { type: "array", cellStyles: true });
-          const firstSheetName = templateWorkbookBase.SheetNames[0];
-          const ws = templateWorkbookBase.Sheets[firstSheetName];
-          const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-
-          // Calcola l'ultimo progressivo presente nel file Excel caricato per allineare la numerazione
-          let maxProgExcel = 0;
-          for (let r = 2; r < rows.length; r++) {
-            const valB = parseInt(rows[r][1], 10);
-            if (!isNaN(valB) && valB > maxProgExcel) maxProgExcel = valB;
-          }
-
-          document.getElementById("template-status").innerHTML = `
-            <span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check"></i> File caricato:</span>
-            <code class="text-white">${file.name}</code> (${Math.max(0, rows.length - 2)} righe storiche • Ultimo Prog.: <b>${maxProgExcel || "N/D"}</b>).
-            I nuovi record verranno accodati preservando il file!
-          `;
-          mostraToast(`Template Excel "${file.name}" caricato con successo!`, "success");
-        } catch (err) {
-          console.error(err);
-          mostraToast("Errore nella lettura del file Excel selezionato.", "error");
-        }
+          document.getElementById("template-status").innerHTML = `<span class="text-emerald-400 font-bold">Template caricato:</span> ${file.name}`;
+          mostraToast("Template Excel caricato con successo!", "success");
+        } catch (err) { mostraToast("Errore lettura file Excel.", "error"); }
       };
       reader.readAsArrayBuffer(file);
     }
 
-    // Converte un singolo record nell'array esatto di 154 colonne (indici 0..153 -> Colonne A..EX)
-    function costruisciRiga154Colonne(rec) {
-      const row = new Array(154).fill("");
-
-      row[1]  = rec.prog !== "" ? Number(rec.prog) || rec.prog : ""; // B (1): Prog. n°
-      row[3]  = rec.data_prelievo || "";                            // D (3): Data Prelievo
-      row[5]  = rec.prod_wbs || "";                                 // F (5): Localizzazione Prelievo - Sito di Produzione -> WBS
-      row[6]  = rec.prod_cantiere || "";                            // G (6): Cantiere
-      row[7]  = rec.prod_sito || "";                                // H (7): Sito Produzione
-      row[8]  = rec.dep_wbs || "";                                  // I (8): Localizzazione Prelievo - Deposito Intermedio -> WBS
-      row[9]  = rec.dep_cantiere || "";                             // J (9): Cantiere
-      row[10] = rec.dep_sito || "";                                 // K (10): Sito di produzione
-      row[12] = rec.punto_prelievo || "";                           // M (12): Campione -> Punto Prelievo
-      row[13] = rec.denominazione || "";                            // N (13): Denominazione/Localizzazione
-      row[14] = rec.pk_km || "";                                    // O (14): p.k._km
-      row[15] = rec.pk_hm || "";                                    // P (15): p.k._hm
-      row[16] = rec.litologia || "";                                // Q (16): Litologia
-      row[18] = rec.cdc || "";                                      // S (18): Catena di Custodia n°
-      row[19] = rec.laboratorio || "";                              // T (19): Laboratorio
-      row[20] = rec.certificato_num || "";                          // U (20): Certificato n°
-      row[21] = rec.data_emissione || "";                           // V (21): Data emissione
-      row[22] = rec.anno_lab_cert || "";                            // W (22): Anno_Lab_Cert
-      row[24] = rec.sup_1a || "";                                   // Y (24): CSC - Tab 1 All. 5 DLgs 152/2006 -> Sup. 1/A
-      row[25] = rec.sup_1b || "";                                   // Z (25): Sup. 1/B
-      row[26] = rec.amianto_sino || "";                             // AA (26): Amianto Presente [SI_NO]
-      row[27] = rec.amianto_lq || "";                               // AB (27): Amianto LQ
-      row[28] = rec.amianto_tipo || "";                             // AC (28): Tipologia Amianto Rilevato
-      row[29] = rec.amianto_dm161 || "";                            // AD (29): Risultato Amianto DM 161/2012 [mg/kg]
-      row[30] = rec.amianto_dm94 || "";                             // AE (30): Risultato Amianto DM 06/09/94 [mg/kg]
-      row[32] = rec.tens_tipo || "";                                // AG (32): Tensioattivi -> Tipologia Schiumogeno
-      row[33] = rec.tens_mgkg || "";                                // AH (33): mg/kg
-      row[34] = rec.tens_sr || "";                                  // AI (34): SR
-      row[36] = rec.sottoprodotto || "";                            // AK (36): Qualifica del MdS -> Sottoprodotto
-      row[37] = rec.cer || "";                                      // AL (37): CER
-      row[38] = rec.classe_peric || "";                             // AM (38): Classe di pericolosità
-      row[40] = rec.dm98 || "";                                     // AO (40): DM 05/02/98 -> A recupero - All.3
-      row[42] = rec.dm10_inerti || "";                              // AQ (42): DM 27/09/2010 -> Inerti Tab.2
-      row[43] = rec.dm10_nonper || "";                              // AR (43): Non pericolosi Tab. 5 e 5a
-      row[44] = rec.dm10_per || "";                                 // AS (44): Pericolosi Tab.6
-      row[46] = rec.destinazione || "";                             // AU (46): Gestione operativa del MdS -> Destinazione effettiva
-      row[48] = rec.indagine_tipo || "";                            // AW (48): Indagine di caratterizzazione -> Tipologia
-      row[49] = rec.indagine_fase || "";                            // AX (49): Fase
-      row[52] = rec.note || "";                                     // BA (52): Note
-      row[55] = rec.id_col_bd || "";                                // BD (55): ID
-
-      // Colonne BF (57) -> EX (153): I 97 analiti chimici esatti
-      ANALITI_97.forEach((an, idx) => {
-        const colIndex = 57 + idx;
-        row[colIndex] = (rec.analiti && rec.analiti[an.key] !== undefined) ? rec.analiti[an.key] : "";
-      });
-
-      return row;
-    }
-
-    function creaIntestazioni154Colonne() {
-      const row1 = new Array(154).fill("");
-      const row2 = new Array(154).fill("");
-
-      // Riga 1: Macro-categorie esattamente come fac-simile_Registro_RdP.xlsx
-      row1[1]  = "Prog. n°";
-      row1[3]  = "Data Prelievo";
-      row1[5]  = "Localizzazione Prelievo - Sito di Produzione";
-      row1[8]  = "Localizzazione Prelievo - Deposito Intermedio";
-      row1[12] = "Campione";
-      row1[18] = "Catena di Custodia n°";
-      row1[19] = "Laboratorio";
-      row1[20] = "Certificato";
-      row1[22] = "Anno_Lab_Cert";
-      row1[24] = "CSC - Tab 1 All. 5 DLgs 152/2006";
-      row1[32] = "Tensioattivi";
-      row1[36] = "Qualifica del MdS";
-      row1[40] = "DM 05/02/98";
-      row1[42] = "DM 27/09/2010";
-      row1[46] = "Gestione operativa del MdS";
-      row1[48] = "Indagine di caratterizzazione";
-      row1[52] = "Note";
-      row1[55] = "ID";
-      row1[57] = "Analiti Chimici — Tab. 1 All. 5 Parte IV D.Lgs. 152/06";
-
-      // Riga 2: Sotto-intestazioni esatte
-      row2[5]  = "WBS";
-      row2[6]  = "Cantiere";
-      row2[7]  = "Sito Produzione";
-      row2[8]  = "WBS";
-      row2[9]  = "Cantiere";
-      row2[10] = "Sito di produzione";
-      row2[12] = "Punto Prelievo";
-      row2[13] = "Denominazione/Localizzazione";
-      row2[14] = "p.k._km";
-      row2[15] = "p.k._hm";
-      row2[16] = "Litologia";
-      row2[20] = "Certificato n°";
-      row2[21] = "Data emissione";
-      row2[24] = "Sup. 1/A";
-      row2[25] = "Sup. 1/B";
-      row2[26] = "Amianto Presente [SI_NO]";
-      row2[27] = "Amianto LQ";
-      row2[28] = "Tipologia Amianto Rilevato";
-      row2[29] = "Risultato Amianto DM 161/2012 [mg/kg]";
-      row2[30] = "Risultato Amianto DM 06/09/94 [mg/kg]";
-      row2[32] = "Tipologia Schiumogeno";
-      row2[33] = "mg/kg";
-      row2[34] = "SR";
-      row2[36] = "Sottoprodotto";
-      row2[37] = "CER";
-      row2[38] = "Classe di pericolosità";
-      row2[40] = "A recupero - All.3";
-      row2[42] = "Inerti Tab.2";
-      row2[43] = "Non pericolosi Tab. 5 e 5a";
-      row2[44] = "Pericolosi Tab.6";
-      row2[46] = "Destinazione effettiva";
-      row2[48] = "Tipologia";
-      row2[49] = "Fase";
-
-      ANALITI_97.forEach((an, idx) => {
-        row2[57 + idx] = an.excelHeader;
-      });
-
-      // Celle unite della Riga 1 come nel fac-simile Excel
-      const merges = [
-        { s: { r: 0, c: 5 },  e: { r: 0, c: 7 } },   // F1:H1
-        { s: { r: 0, c: 8 },  e: { r: 0, c: 10 } },  // I1:K1
-        { s: { r: 0, c: 12 }, e: { r: 0, c: 16 } },  // M1:Q1
-        { s: { r: 0, c: 20 }, e: { r: 0, c: 21 } },  // U1:V1
-        { s: { r: 0, c: 24 }, e: { r: 0, c: 30 } },  // Y1:AE1
-        { s: { r: 0, c: 32 }, e: { r: 0, c: 34 } },  // AG1:AI1
-        { s: { r: 0, c: 36 }, e: { r: 0, c: 38 } },  // AK1:AM1
-        { s: { r: 0, c: 42 }, e: { r: 0, c: 44 } },  // AQ1:AS1
-        { s: { r: 0, c: 48 }, e: { r: 0, c: 49 } },  // AW1:AX1
-        { s: { r: 0, c: 57 }, e: { r: 0, c: 153 } }  // BF1:EX1
-      ];
-
-      return { row1, row2, merges };
-    }
-
-    function esportaSingoloRecordExcel(uid) {
-      const rec = archivioRecords.find(r => r.uid === uid);
-      if (!rec) return;
-      esportaListaRecordInExcel([rec], `Registro_RdP_${rec.certificato_num}.xlsx`, false);
-    }
-
     function esportaRegistroExcelCompleto() {
-      if (archivioRecords.length === 0) {
-        mostraToast("Nessun record presente nell'archivio da esportare.", "error");
-        return;
-      }
-      // Ordina per progressivo crescente in fase di esportazione Excel
-      const ordinati = [...archivioRecords].sort((a, b) => (Number(a.prog) || 0) - (Number(b.prog) || 0));
-      const oggi = new Date().toISOString().slice(0, 10);
-      esportaListaRecordInExcel(ordinati, `Registro_RdP_Aggiornato_${oggi}.xlsx`, true);
+      if (archivioRecords.length === 0) { mostraToast("Nessun record da esportare.", "error"); return; }
+      const wb = XLSX.utils.book_new();
+      const aoa = [new Array(154).fill(""), new Array(154).fill("")];
+      archivioRecords.forEach(rec => {
+        const row = new Array(154).fill("");
+        row[1] = Number(rec.prog) || rec.prog;
+        row[3] = rec.data_prelievo || "";
+        row[5] = rec.prod_wbs || "";
+        row[13] = rec.denominazione || "";
+        row[20] = rec.certificato_num || "";
+        row[22] = rec.anno_lab_cert || "";
+        row[36] = rec.sottoprodotto || "";
+        ANALITI_97.forEach((an, idx) => { row[57 + idx] = (rec.analiti && rec.analiti[an.key]) ? rec.analiti[an.key] : ""; });
+        aoa.push(row);
+      });
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      XLSX.utils.book_append_sheet(wb, ws, "Foglio1");
+      XLSX.writeFile(wb, "Registro_RdP_QHSE.xlsx");
+      mostraToast("File Excel esportato con successo!", "success");
     }
 
-    function esportaListaRecordInExcel(recordsDaEsportare, fileName, usaTemplateSePresente) {
-      let wb;
-      let ws;
-
-      if (usaTemplateSePresente && templateWorkbookBase) {
-        // Clona il workbook esistente e accoda le righe nuove (evitando duplicati per Anno_Lab_Cert)
-        wb = XLSX.utils.book_new();
-        const firstSheetName = templateWorkbookBase.SheetNames[0];
-        const origWs = templateWorkbookBase.Sheets[firstSheetName];
-        const existingAoa = XLSX.utils.sheet_to_json(origWs, { header: 1, defval: "" });
-
-        const chiaviEsistenti = new Set();
-        for (let r = 2; r < existingAoa.length; r++) {
-          if (existingAoa[r][22]) chiaviEsistenti.add(String(existingAoa[r][22]).trim());
-        }
-
-        let aggiunti = 0;
-        recordsDaEsportare.forEach(rec => {
-          if (!rec.anno_lab_cert || !chiaviEsistenti.has(rec.anno_lab_cert)) {
-            existingAoa.push(costruisciRiga154Colonne(rec));
-            aggiunti++;
-          }
-        });
-
-        ws = XLSX.utils.aoa_to_sheet(existingAoa);
-        if (origWs["!merges"]) ws["!merges"] = origWs["!merges"];
-        if (origWs["!cols"]) ws["!cols"] = origWs["!cols"];
-        XLSX.utils.book_append_sheet(wb, ws, firstSheetName);
-        mostraToast(`Esportazione completata (${aggiunti} nuovi record accodati al template)!`, "success");
-      } else {
-        // Genera da zero con struttura identica a fac-simile_Registro_RdP.xlsx
-        wb = XLSX.utils.book_new();
-        const { row1, row2, merges } = creaIntestazioni154Colonne();
-        const aoa = [row1, row2];
-
-        recordsDaEsportare.forEach(rec => {
-          aoa.push(costruisciRiga154Colonne(rec));
-        });
-
-        ws = XLSX.utils.aoa_to_sheet(aoa);
-        ws["!merges"] = merges;
-
-        // Larghezze colonne ottimizzate
-        const cols = new Array(154).fill({ wch: 14 });
-        cols[0] = { wch: 3 };
-        cols[1] = { wch: 10 };
-        cols[3] = { wch: 13 };
-        cols[13] = { wch: 28 };
-        cols[18] = { wch: 24 };
-        cols[22] = { wch: 25 };
-        cols[46] = { wch: 28 };
-        cols[52] = { wch: 30 };
-        ws["!cols"] = cols;
-
-        XLSX.utils.book_append_sheet(wb, ws, "Foglio1");
-        mostraToast(`File Excel "${fileName}" generato con 154 colonne!`, "success");
-      }
-
-      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-      const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 150);
-    }
-
-    // =========================================================================
-    // 10. UI HELPERS (TOAST & MODALE DI CONFERMA NON BLOCCANTE)
-    // =========================================================================
     function mostraToast(messaggio, tipo = "info") {
       const container = document.getElementById("toast-container");
       const toast = document.createElement("div");
-
-      const stili = {
-        success: "bg-emerald-950/95 border-emerald-500/50 text-emerald-200",
-        error: "bg-rose-950/95 border-rose-500/50 text-rose-200",
-        info: "bg-slate-900/95 border-sky-500/50 text-sky-200"
-      };
-      const icone = {
-        success: "fa-circle-check text-emerald-400",
-        error: "fa-circle-exclamation text-rose-400",
-        info: "fa-circle-info text-sky-400"
-      };
-
-      toast.className = `pointer-events-auto border rounded-xl px-4 py-3 shadow-2xl text-xs font-semibold flex items-center gap-2.5 backdrop-blur-md transition-all duration-300 ${stili[tipo] || stili.info}`;
-      toast.innerHTML = `<i class="fa-solid ${icone[tipo] || icone.info} text-sm"></i><span>${messaggio}</span>`;
+      const stili = { success: "bg-emerald-950 text-emerald-200", error: "bg-rose-950 text-rose-200", info: "bg-slate-900 text-sky-200" };
+      toast.className = `border rounded-xl px-4 py-3 shadow-2xl text-xs font-semibold flex items-center gap-2.5 ${stili[tipo] || stili.info}`;
+      toast.innerHTML = `<span>${messaggio}</span>`;
       container.appendChild(toast);
-
-      setTimeout(() => {
-        toast.style.opacity = "0";
-        toast.style.transform = "translateY(8px)";
-        setTimeout(() => toast.remove(), 300);
-      }, 3600);
+      setTimeout(() => toast.remove(), 3500);
     }
 
     function mostraConferma(titolo, messaggio, onConfirm) {
-      const modal = document.getElementById("confirm-modal");
       document.getElementById("confirm-title").innerText = titolo;
       document.getElementById("confirm-message").innerText = messaggio;
-
-      const btnOk = document.getElementById("confirm-ok-btn");
-      const btnCancel = document.getElementById("confirm-cancel-btn");
-
-      const chiudi = () => modal.classList.add("hidden");
-
-      btnCancel.onclick = chiudi;
-      btnOk.onclick = () => {
-        chiudi();
-        onConfirm();
-      };
-
+      const modal = document.getElementById("confirm-modal");
+      document.getElementById("confirm-ok-btn").onclick = () => { modal.classList.add("hidden"); onConfirm(); };
+      document.getElementById("confirm-cancel-btn").onclick = () => modal.classList.add("hidden");
       modal.classList.remove("hidden");
     }
   </script>
 </body>
 </html>
- 
