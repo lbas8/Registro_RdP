@@ -870,14 +870,20 @@
       }
     }
 
-    function eseguiLogin(e) {
+function eseguiLogin(e) {
       e.preventDefault();
-      const username = document.getElementById("login-username").value.trim().toLowerCase();
+      // CORREZIONE: rimuoviamo .toLowerCase() per rispettare le maiuscole delle chiavi
+      const usernameInput = document.getElementById("login-username").value.trim();
       const password = document.getElementById("login-password").value;
 
-      const utente = UTENTI_PREDEFINITI[username];
+      // Cerca l'utente ignorando le maiuscole/minuscole in modo sicuro
+      const chiaveTrovata = Object.keys(UTENTI_PREDEFINITI).find(
+        k => k.toLowerCase() === usernameInput.toLowerCase()
+      );
+      const utente = chiaveTrovata ? UTENTI_PREDEFINITI[chiaveTrovata] : null;
+
       if (utente && utente.password === password) {
-        utenteCorrente = { username, ...utente };
+        utenteCorrente = { username: chiaveTrovata, ...utente };
         sessionStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(utenteCorrente));
         avviaInterfacciaAutenticata();
         mostraToast(`Benvenuto, ${utente.nomeCompleto}`, "success");
