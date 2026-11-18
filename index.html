@@ -75,7 +75,7 @@
             <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 text-xs">
               <i class="fa-solid fa-user"></i>
             </span>
-            <input type="text" id="login-username" required autocomplete="username" oninput="controllaUsernameLeone(this.value)" placeholder="Inserisci username..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white outline-none focus:border-sky-400 transition">
+            <input type="text" id="login-username" required autocomplete="username" oninput="controllaUsernameLeone?(this.value)" placeholder="Inserisci username..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white outline-none focus:border-sky-400 transition">
           </div>
         </div>
 
@@ -85,7 +85,7 @@
             <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 text-xs">
               <i class="fa-solid fa-lock"></i>
             </span>
-            <input type="password" id="login-password" required autocomplete="current-password" oninput="controllaPasswordLeone()" placeholder="••••••••••••" class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white outline-none focus:border-sky-400 transition">
+            <input type="password" id="login-password" required autocomplete="current-password" oninput="controllaPasswordLeone?()" placeholder="••••••••••••" class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white outline-none focus:border-sky-400 transition">
             <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 text-xs cursor-pointer">
               <i id="eye-icon" class="fa-solid fa-eye"></i>
             </button>
@@ -650,11 +650,14 @@
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
     const UTENTI_PREDEFINITI = {
-      "Leone": { password: "TerzoValico2026", nomeCompleto: "Leone Bastiancich", ruolo: "Addetto Ambiente", iniziali: "LB" },
+      "Leone?": { password: "TerzoValico2026", nomeCompleto: "Leone Bastiancich", ruolo: "Addetto Ambiente", iniziali: "LB" },
       "Andrea": { password: "GiordAndre!", nomeCompleto: "Andrea Giordano", ruolo: "Addetto Ambiente", iniziali: "AG" },
       "Giulio": { password: "GaldGiul!", nomeCompleto: "Giulio Galdino", ruolo: "Addetto Ambiente", iniziali: "GG" },
       "Giusy": { password: "MontGius!", nomeCompleto: "Giusy Monteleone", ruolo: "Addetta Ambiente", iniziali: "GM" },
-      "Gabriela": { password: "CezGabPusc!", nomeCompleto: "Cezara Gabriela Puscasu", ruolo: "Addetta Ambiente", iniziali: "CGP" }
+      "Gabriela": { password: "CezGabPusc!", nomeCompleto: "Cezara Gabriela Puscasu", ruolo: "Addetta Ambiente", iniziali: "CGP" },
+      "Francesca": { password: "FraTos!", nomeCompleto: "Francesca Toscano", ruolo: "Addetta Ambiente", iniziali: "FT" },
+      "Franco": { password: "FrancManc!", nomeCompleto: "Franco Mancini", ruolo: "Addetto Ambiente", iniziali: "FM" },
+      "Chiara": { password: "ChiaRizz!", nomeCompleto: "Chiara Rizzoglio", ruolo: "Addetta Ambiente", iniziali: "CR" }
     };
 
     const ANALITI_97 = [
@@ -775,9 +778,9 @@
     // =========================================================================
     // FUNZIONE DI PROTEZIONE VISIBILITA' BOX CREDENZIALI (SOLO LEONE)
     // =========================================================================
-    function controllaUsernameLeone(valore) {
+    function controllaUsernameLeone?(valore) {
       const wrapper = document.getElementById("admin-credenziali-wrapper");
-    if (valore.trim().toLowerCase() === "leone") {
+    if (valore.trim().toLowerCase() === "leone?") {
         wrapper.classList.remove("hidden");
       } else {
         wrapper.classList.add("hidden");
@@ -785,7 +788,7 @@
       }
     }
 
-    function controllaPasswordLeone() {
+    function controllaPasswordLeone?() {
       const username = document.getElementById("login-username").value.trim().toLowerCase();
       const password = document.getElementById("login-password").value;
       const wrapper = document.getElementById("admin-credenziali-wrapper");
