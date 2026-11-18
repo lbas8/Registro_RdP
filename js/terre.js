@@ -1,4 +1,4 @@
-Fvaloreanalitaintestolet archivioRecords = [];
+let archivioRecords = [];
 let codaPdfEstratti = [];
 let indiceCodaAttivo = -1;
 let templateWorkbookBase = null;
@@ -127,12 +127,10 @@ function trovaValoreAnalitaInTesto(testo, analitaObj) {
   }
   if (rigaTrovataIdx === -1) return "";
 
-  // Costruiamo il testo escludendo l'alias stesso (evita che "C<12" venga letto come "<12")
   const rigaCorrente = righe[rigaTrovataIdx];
   const posAlias = rigaCorrente.toLowerCase().indexOf(matchedAlias.toLowerCase());
   const dopoAlias = rigaCorrente.substring(posAlias + matchedAlias.length);
 
-  // Controlla la riga successiva SOLO se non contiene il nome di un altro parametro chimico
   let rigaSucc = righe[rigaTrovataIdx + 1] || "";
   const isAltroAnalita = ANALITI_97.some(other => 
     other.key !== analitaObj.key && 
@@ -141,21 +139,16 @@ function trovaValoreAnalitaInTesto(testo, analitaObj) {
   if (isAltroAnalita) rigaSucc = "";
 
   let blocco = (dopoAlias + " " + rigaSucc).replace(/(?:UNI|EN|ISO|EPA)\s*[A-Z0-9\-\/:]+/gi, " ");
-  // Rimuove eventuali diciture (LOD 0.30) per non confonderle col risultato
   blocco = blocco.replace(/\(LOD[^)]*\)/gi, " ");
 
-  // 1. Priorità a "n.r." (se presente prima di eventuali numeri successivi)
   if (/\bn\.?r\.?\b/i.test(blocco)) return "n.r.";
 
-  // 2. Priorità a valori minori del limite di quantificazione (< 0,500 / < 0,10)
   const matchMinore = blocco.match(/(<\s*\d+(?:[.,]\d+)?)/);
   if (matchMinore) return formattaValoreItaliano(matchMinore[1]);
 
-  // 3. Valori con incertezza (es. 356 ± 107 o 4.54 ± 1.36)
   const matchIncertezza = blocco.match(/(\d+(?:[.,]\d+)?)\s*±\s*\d+/);
   if (matchIncertezza) return formattaValoreItaliano(matchIncertezza[1]);
 
-  // 4. Valore decimale standard
   const matchDecimale = blocco.match(/\b(\d+[.,]\d+)\b/);
   if (matchDecimale) return formattaValoreItaliano(matchDecimale[1]);
 
@@ -166,13 +159,30 @@ function configuraDropzone() {
   const dropzone = document.getElementById("dropzone");
   const fileInput = document.getElementById("fileInputPdf");
   if (!dropzone) return;
+
   dropzone.addEventListener("click", () => fileInput.click());
-  ["dragenter", "dragover"].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add("dragover"); }));
-  ["dragleave", "drop"].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove("dragover"); }));
-  dropzone.addEventListener("drop", e => {
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) gestisciFileSelezionati(files);
+
+  ["dragenter", "dragover", "dragleave", "drop"].forEach(eventName => {
+    dropzone.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
   });
+
+  ["dragenter", "dragover"].forEach(eventName => {
+    dropzone.addEventListener(eventName, () => dropzone.classList.add("dragover"), false);
+  });
+
+  ["dragleave", "drop"].forEach(eventName => {
+    dropzone.addEventListener(eventName, () => dropzone.classList.remove("dragover"), false);
+  });
+
+  dropzone.addEventListener("drop", (e) => {
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      gestisciFileSelezionati(files);
+    }
+  }, false);
 }
 
 async function gestisciFileSelezionati(fileList) {
