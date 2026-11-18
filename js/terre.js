@@ -196,7 +196,7 @@ async function gestisciFileSelezionati(fileList) {
     try {
       const testo = await estraiTestoSpazialePDF(pdfFiles[i]);
       const rec = parseTestoCertificatoPDF(testo, pdfFiles[i].name, progCorrente + i);
-      codaPdfEstratti.push({ fileName: pdfFiles[i].name, record: rec, salvato: false });
+      codaPdfEstratti.push({ fileName: pdfFiles[i].name, record: rec });
     } catch (err) { console.error(err); }
   }
 
@@ -267,6 +267,7 @@ function renderCodaPDF() {
 }
 
 function selezionaDaCodaPDF(idx) {
+  if (idx < 0 || idx >= codaPdfEstratti.length) return;
   indiceCodaAttivo = idx;
   renderCodaPDF();
   compilaSchedaVerifica(codaPdfEstratti[idx].record, codaPdfEstratti[idx].fileName);
@@ -408,7 +409,19 @@ function salvaRecordRdP() {
 
   salvaSuLocalStorage();
   aggiornaTuttaUI();
-  chiudiAnteprimaPDF();
+
+  // Rimuove il file salvato dalla coda PDF attiva
+  if (indiceCodaAttivo !== -1 && codaPdfEstratti[indiceCodaAttivo]) {
+    codaPdfEstratti.splice(indiceCodaAttivo, 1);
+    indiceCodaAttivo = -1;
+  }
+
+  if (codaPdfEstratti.length > 0) {
+    renderCodaPDF();
+    selezionaDaCodaPDF(0);
+  } else {
+    svuotaCodaPDF();
+  }
 }
 
 function eliminaRecordRdP(uid) {
