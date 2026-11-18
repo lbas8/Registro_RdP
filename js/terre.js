@@ -1,4 +1,4 @@
-let archivioRecords = [];
+Fvaloreanalitaintestolet archivioRecords = [];
 let codaPdfEstratti = [];
 let indiceCodaAttivo = -1;
 let templateWorkbookBase = null;
@@ -127,30 +127,37 @@ function trovaValoreAnalitaInTesto(testo, analitaObj) {
   }
   if (rigaTrovataIdx === -1) return "";
 
-  // Allarghiamo la finestra di scansione alle 3 righe successive per gestire tabelle spaziate o con ± incertezza
-  let blocco = "";
-  for (let k = rigaTrovataIdx; k <= Math.min(righe.length - 1, rigaTrovataIdx + 3); k++) {
-    blocco += " " + righe[k];
-  }
-  
-  // Pulisci normative o tag superflui
-  blocco = blocco.replace(/(?:UNI|EN|ISO|EPA)\s*[A-Z0-9\-\/:]+/gi, " ");
+  // Costruiamo il testo escludendo l'alias stesso (evita che "C<12" venga letto come "<12")
+  const rigaCorrente = righe[rigaTrovataIdx];
+  const posAlias = rigaCorrente.toLowerCase().indexOf(matchedAlias.toLowerCase());
+  const dopoAlias = rigaCorrente.substring(posAlias + matchedAlias.length);
 
-  if (/\bn\.?r\.?\b/i.test(blocco) && !/\d/.test(blocco)) return "n.r.";
-  
-  // Cerca prima un valore con incertezza (es. 356 ± 107) o decimale pulito
+  // Controlla la riga successiva SOLO se non contiene il nome di un altro parametro chimico
+  let rigaSucc = righe[rigaTrovataIdx + 1] || "";
+  const isAltroAnalita = ANALITI_97.some(other => 
+    other.key !== analitaObj.key && 
+    other.aliases.some(al => new RegExp("\\b" + al.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(rigaSucc))
+  );
+  if (isAltroAnalita) rigaSucc = "";
+
+  let blocco = (dopoAlias + " " + rigaSucc).replace(/(?:UNI|EN|ISO|EPA)\s*[A-Z0-9\-\/:]+/gi, " ");
+  // Rimuove eventuali diciture (LOD 0.30) per non confonderle col risultato
+  blocco = blocco.replace(/\(LOD[^)]*\)/gi, " ");
+
+  // 1. Priorità a "n.r." (se presente prima di eventuali numeri successivi)
+  if (/\bn\.?r\.?\b/i.test(blocco)) return "n.r.";
+
+  // 2. Priorità a valori minori del limite di quantificazione (< 0,500 / < 0,10)
+  const matchMinore = blocco.match(/(<\s*\d+(?:[.,]\d+)?)/);
+  if (matchMinore) return formattaValoreItaliano(matchMinore[1]);
+
+  // 3. Valori con incertezza (es. 356 ± 107 o 4.54 ± 1.36)
   const matchIncertezza = blocco.match(/(\d+(?:[.,]\d+)?)\s*±\s*\d+/);
   if (matchIncertezza) return formattaValoreItaliano(matchIncertezza[1]);
 
-  const matchMinore = blocco.match(/([<>]\s*\d+(?:[.,]\d+)?)/);
-  if (matchMinore) return formattaValoreItaliano(matchMinore[1]);
-  
+  // 4. Valore decimale standard
   const matchDecimale = blocco.match(/\b(\d+[.,]\d+)\b/);
   if (matchDecimale) return formattaValoreItaliano(matchDecimale[1]);
-  
-  // Fallback a numero intero se presente nel blocco
-  const matchIntero = blocco.match(/\b(\d{1,5})\b/);
-  if (matchIntero) return formattaValoreItaliano(matchIntero[1]);
 
   return "";
 }
