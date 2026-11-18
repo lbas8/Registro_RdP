@@ -1,4 +1,7 @@
 let archivioRifiuti = [];
+let codaRifiutiEstratti = [];
+let indiceCodaRifiutiAttivo = -1;
+
 const STORAGE_KEY_RIFIUTI = "tv_registro_rdp_rifiuti_v1";
 
 function inizializzaRifiuti() {
@@ -49,15 +52,81 @@ function configuraDropzoneRifiuti() {
 async function gestisciFileRifiutiSelezionati(files) {
   const pdfs = Array.from(files).filter(f => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
   if (pdfs.length === 0) return;
-  const testo = await estraiTestoSpazialePDF(pdfs[0]);
-  const matchCer = testo.match(/(?:EER|CER)[:\s]*(\d{2}\s*\d{2}\s*\d{2}\s*\*?)/i) || ["", "17 05 04"];
-  const matchCert = testo.match(/Certificato\s+n[°º.]?\s*([A-Z0-9\-\/]+)/i) || ["", pdfs[0].name.replace(/\.pdf$/i, "")];
+  
+  codaRifiutiEstratti = [];
+  let progRif = calcolaProssimoProgressivoRifiuti();
 
-  compilaSchedaRifiuto({
-    uid: "", prog: calcolaProssimoProgressivoRifiuti(), data_prelievo: new Date().toLocaleDateString("it-IT"),
-    cer: matchCer[1].trim(), pericolosita: matchCer[1].includes("*") ? "Pericoloso" : "Non Pericoloso",
-    certificato: matchCert[1].trim(), cantiere: "Terzo Valico"
-  }, pdfs[0].name);
+  for (let i = 0; i < pdfs.length; i++) {
+    try {
+      const testo = await estraiTestoSpazialePDF(pdfs[i]);
+      const matchCer = testo.match(/(?:EER|CER)[:\s]*(\d{2}\s*\d{2}\s*\d{2}\s*\*?)/i) || ["", "17 05 04"];
+      const matchCert = testo.match(/Certificato\s+n[°º.]?\s*([A-Z0-9\-\/]+)/i) || ["", pdfs[i].name.replace(/\.pdf$/i, "")];
+
+      const rec = {
+        uid: "", prog: progRif + i, data_prelievo: new Date().toLocaleDateString("it-IT"),
+        cer: matchCer[1].trim(), pericolosita: matchCer[1].includes("*") ? "Pericoloso" : "Non Pericoloso",
+        certificato: matchCert[1].trim(), cantiere: "Terzo Valico"
+      };
+      codaRifiutiEstratti.push({ fileName: pdfs[i].name, record: rec });
+    } catch (err) { console.error(err); }
+  }
+
+  if (codaRifiutiEstratti.length > 0) {
+    renderCodaRifiuti();
+    selezionaDaCodaRifiuti(0);
+    mostraToast("Estrazione Rifiuti completata!", "success");
+  }
+  document.getElementById("fileInputRifiutiPdf").value = "";
+}
+
+function renderCodaRifiuti() {
+  let container = document.getElementById("coda-rifiuti-container");
+  if (!container) {
+    // Crea dinamicamente il box coda rifiuti se non presente nel DOM base
+    const dropzoneBox = document.getElementById("dropzone-rifiuti").parentNode;
+    container = document.createElement("div");
+    container.id = "coda-rifiuti-container";
+    container.className = "hidden mt-4 bg-slate-950 border border-slate-800 rounded-xl p-3.5";
+    container.innerHTML = `
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[11px] font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-layer-group"></i> Coda PDF Rifiuti (<span id="coda-rifiuti-count">0</span>)
+        </span>
+        <button onclick="svuotaCodaRifiuti()" class="text-[11px] text-slate-400 hover:text-rose-400 font-bold cursor-pointer">Chiudi coda</button>
+      </div>
+      <div id="coda-rifiuti-list" class="flex flex-wrap gap-2"></div>
+    `;
+    dropzoneBox.appendChild(container);
+  }
+
+  const list = document.getElementById("coda-rifiuti-list");
+  document.getElementById("coda-rifiuti-count").innerText = codaRifiutiEstratti.length;
+  if (codaRifiutiEstratti.length === 0) { container.classList.add("hidden"); return; }
+  container.classList.remove("hidden");
+  list.innerHTML = "";
+  codaRifiutiEstratti.forEach((item, idx) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-2 cursor-pointer ${idx === indiceCodaRifiutiAttivo ? "bg-rose-500/20 border-rose-400 text-rose-300" : "bg-slate-900 border-slate-700 text-slate-300"}`;
+    btn.innerHTML = `<i class="fa-solid fa-file-pdf text-rose-400"></i><span>${item.record.certificato} (${item.record.cer})</span>`;
+    btn.onclick = () => selezionaDaCodaRifiuti(idx);
+    list.appendChild(btn);
+  });
+}
+
+function selezionaDaCodaRifiuti(idx) {
+  if (idx < 0 || idx >= codaRifiutiEstratti.length) return;
+  indiceCodaRifiutiAttivo = idx;
+  renderCodaRifiuti();
+  compilaSchedaRifiuto(codaRifiutiEstratti[idx].record, codaRifiutiEstratti[idx].fileName);
+}
+
+function svuotaCodaRifiuti() {
+  codaRifiutiEstratti = [];
+  indiceCodaRifiutiAttivo = -1;
+  const container = document.getElementById("coda-rifiuti-container");
+  if (container) container.classList.add("hidden");
+  chiudiAnteprimaRifiuto();
 }
 
 function compilaSchedaRifiuto(rec, titolo) {
@@ -69,6 +138,7 @@ function compilaSchedaRifiuto(rec, titolo) {
   document.getElementById("r_cantiere").value = rec.cantiere || "";
   document.getElementById("r_certificato").value = rec.certificato || "";
   document.getElementById("form-rifiuti-container").classList.remove("hidden");
+  document.getElementById("form-rifiuti-container").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function chiudiAnteprimaRifiuto() {
@@ -95,8 +165,20 @@ function salvaRecordRifiuto() {
 
   salvaRifiutiSuLocalStorage();
   aggiornaUIRifiuti();
-  chiudiAnteprimaRifiuto();
   mostraToast("Rifiuto salvato!", "success");
+
+  // Rimuove il file salvato dalla coda Rifiuti attiva
+  if (indiceCodaRifiutiAttivo !== -1 && codaRifiutiEstratti[indiceCodaRifiutiAttivo]) {
+    codaRifiutiEstratti.splice(indiceCodaRifiutiAttivo, 1);
+    indiceCodaRifiutiAttivo = -1;
+  }
+
+  if (codaRifiutiEstratti.length > 0) {
+    renderCodaRifiuti();
+    selezionaDaCodaRifiuti(0);
+  } else {
+    svuotaCodaRifiuti();
+  }
 }
 
 function aggiornaUIRifiuti() {
