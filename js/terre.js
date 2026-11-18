@@ -127,18 +127,30 @@ function trovaValoreAnalitaInTesto(testo, analitaObj) {
   }
   if (rigaTrovataIdx === -1) return "";
 
-  const rigaCorrente = righe[rigaTrovataIdx];
-  const posAlias = rigaCorrente.toLowerCase().indexOf(matchedAlias.toLowerCase());
-  const dopoAlias = rigaCorrente.substring(posAlias + matchedAlias.length);
-  const rigaSucc = righe[rigaTrovataIdx + 1] || "";
-  const rigaPrec = righe[rigaTrovataIdx - 1] || "";
-  const blocco = (dopoAlias + " | " + rigaSucc + " | " + rigaPrec).replace(/(?:UNI|EN|ISO|EPA)\s*[A-Z0-9\-\/:]+/gi, " ");
+  // Allarghiamo la finestra di scansione alle 3 righe successive per gestire tabelle spaziate o con ± incertezza
+  let blocco = "";
+  for (let k = rigaTrovataIdx; k <= Math.min(righe.length - 1, rigaTrovataIdx + 3); k++) {
+    blocco += " " + righe[k];
+  }
+  
+  // Pulisci normative o tag superflui
+  blocco = blocco.replace(/(?:UNI|EN|ISO|EPA)\s*[A-Z0-9\-\/:]+/gi, " ");
 
-  if (/\bn\.?r\.?\b/i.test(blocco)) return "n.r.";
+  if (/\bn\.?r\.?\b/i.test(blocco) && !/\d/.test(blocco)) return "n.r.";
+  
+  // Cerca prima un valore con incertezza (es. 356 ± 107) o decimale pulito
+  const matchIncertezza = blocco.match(/(\d+(?:[.,]\d+)?)\s*±\s*\d+/);
+  if (matchIncertezza) return formattaValoreItaliano(matchIncertezza[1]);
+
   const matchMinore = blocco.match(/([<>]\s*\d+(?:[.,]\d+)?)/);
   if (matchMinore) return formattaValoreItaliano(matchMinore[1]);
+  
   const matchDecimale = blocco.match(/\b(\d+[.,]\d+)\b/);
   if (matchDecimale) return formattaValoreItaliano(matchDecimale[1]);
+  
+  // Fallback a numero intero se presente nel blocco
+  const matchIntero = blocco.match(/\b(\d{1,5})\b/);
+  if (matchIntero) return formattaValoreItaliano(matchIntero[1]);
 
   return "";
 }
