@@ -315,9 +315,19 @@ function aggiornaAnnoLabCert() {
 function filtraAnalitiPreview() {
   const testo = document.getElementById("filtro-analiti-preview").value.toLowerCase();
   const cat = document.getElementById("filtro-cat-preview").value;
+  
   document.querySelectorAll(".analita-preview-row").forEach(row => {
+    const inputEl = row.querySelector("input[type='text']");
+    const val = inputEl ? inputEl.value.trim() : "";
     const matchText = row.dataset.label.includes(testo);
-    let matchCat = cat === "ALL" || row.dataset.cat === cat;
+    
+    let matchCat = true;
+    if (cat === "COMPILATI") {
+      matchCat = (val !== "" && val !== "-");
+    } else if (cat !== "ALL") {
+      matchCat = (row.dataset.cat === cat);
+    }
+    
     row.classList.toggle("hidden", !(matchText && matchCat));
   });
 }
