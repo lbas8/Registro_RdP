@@ -28,12 +28,22 @@ function configuraDropzoneRifiuti() {
   const dz = document.getElementById("dropzone-rifiuti");
   const fi = document.getElementById("fileInputRifiutiPdf");
   if (!dz) return;
+  
   dz.addEventListener("click", () => fi.click());
-  ["dragenter", "dragover"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add("dragover"); }));
-  ["dragleave", "drop"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove("dragover"); }));
+  
+  ["dragenter", "dragover", "dragleave", "drop"].forEach(ev => {
+    dz.addEventListener(ev, e => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
+  });
+
+  ["dragenter", "dragover"].forEach(ev => dz.addEventListener(ev, () => dz.classList.add("dragover"), false));
+  ["dragleave", "drop"].forEach(ev => dz.addEventListener(ev, () => dz.classList.remove("dragover"), false));
+  
   dz.addEventListener("drop", e => {
     if (e.dataTransfer.files?.length > 0) gestisciFileRifiutiSelezionati(e.dataTransfer.files);
-  });
+  }, false);
 }
 
 async function gestisciFileRifiutiSelezionati(files) {
