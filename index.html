@@ -26,6 +26,15 @@
       border-color: #38bdf8;
       transform: scale(1.005);
     }
+    .dropzone-rifiuti {
+      border: 2px dashed rgba(244, 63, 94, 0.35);
+      transition: all 0.25s ease;
+    }
+    .dropzone-rifiuti.dragover {
+      background-color: rgba(244, 63, 94, 0.12);
+      border-color: #fb7185;
+      transform: scale(1.005);
+    }
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: #0f172a; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
@@ -131,9 +140,9 @@
           <div>
             <div class="flex items-center gap-2">
               <span class="text-sm sm:text-base font-black uppercase tracking-wide text-white">Registro Rapporti di Prova (RdP)</span>
-              <span class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-sky-500/10 text-sky-400 border border-sky-500/30">154 COLONNE</span>
+              <span class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-sky-500/10 text-sky-400 border border-sky-500/30">TERRE 154 COL. + RIFIUTI</span>
             </div>
-            <p class="text-[11px] text-slate-400">Ufficio Ambiente • Gestione Terre e Rocce da Scavo (D.Lgs. 152/06 & DM 161/2012)</p>
+            <p class="text-[11px] text-slate-400">Ufficio Ambiente • Gestione Terre e Rocce da Scavo (D.Lgs. 152/06 & DM 161/2012) & Registro Rifiuti</p>
           </div>
         </div>
 
@@ -145,7 +154,7 @@
             </div>
             <div class="hidden md:block leading-tight">
               <div id="user-fullname" class="text-xs font-bold text-white">Leone Bastiancich</div>
-              <div id="user-role" class="text-[10px] text-slate-400">Tecnico Ambiente QHSE</div>
+              <div id="user-role" class="text-[10px] text-slate-400">Addetto Ambiente</div>
             </div>
           </div>
 
@@ -160,325 +169,463 @@
     <!-- CONTENUTO PRINCIPALE -->
     <main class="max-w-[1600px] mx-auto w-full px-4 sm:px-8 pt-6 pb-12 flex-grow space-y-6">
 
-      <!-- BARRA AZIONI EXCEL & STATISTICHE RAPIDE -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-        <!-- KPI Sintesi -->
-        <div class="lg:col-span-5 grid grid-cols-3 gap-3">
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Totale RdP</span>
-            <div class="flex items-baseline justify-between mt-1">
-              <span id="kpi-totale" class="text-2xl font-black text-white">0</span>
-              <i class="fa-solid fa-file-lines text-sky-400 text-sm"></i>
-            </div>
-          </div>
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sottoprod. 1/A</span>
-            <div class="flex items-baseline justify-between mt-1">
-              <span id="kpi-1a" class="text-2xl font-black text-emerald-400">0</span>
-              <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
-            </div>
-          </div>
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ultimo Prog.</span>
-            <div class="flex items-baseline justify-between mt-1">
-              <span id="kpi-prog" class="text-xl font-black text-amber-400">-</span>
-              <i class="fa-solid fa-hashtag text-amber-400 text-sm"></i>
-            </div>
-          </div>
+      <!-- =====================================================================
+           SELETTORE MACRO-SEZIONE: TERRE E ROCCE DA SCAVO vs RIFIUTI
+           ===================================================================== -->
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-2xl p-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="cambiaSezionePrincipale('terre')" id="macro-btn-terre" class="px-4 py-2.5 rounded-xl bg-sky-500 text-slate-950 text-xs font-black uppercase tracking-wider shadow-lg shadow-sky-500/20 transition cursor-pointer flex items-center gap-2">
+            <i class="fa-solid fa-mound"></i> Sezione 1: Terre e Rocce da Scavo (154 Colonne)
+          </button>
+          <button onclick="cambiaSezionePrincipale('rifiuti')" id="macro-btn-rifiuti" class="px-4 py-2.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 text-slate-300 text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center gap-2">
+            <i class="fa-solid fa-recycle text-rose-400"></i> Sezione 2: Registro RdP Rifiuti (Semplificato)
+            <span id="badge-count-rifiuti" class="px-1.5 py-0.5 rounded-full text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/30">0</span>
+          </button>
         </div>
-
-        <!-- Gestione Template Excel Esistente & Esportazione -->
-        <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div class="space-y-1">
-            <div class="text-xs font-black text-white uppercase tracking-wide flex items-center gap-2">
-              <i class="fa-solid fa-file-excel text-emerald-400"></i> Integrazione Registro Excel (154 Colonne)
-            </div>
-            <p id="template-status" class="text-[11px] text-slate-400">
-              Nessun file Excel base caricato. L'esportazione genererà la struttura completa a 154 colonne.
-            </p>
-          </div>
-          <div class="flex flex-wrap items-center gap-2.5 shrink-0">
-            <input type="file" id="inputExcelBase" accept=".xlsx,.xls" class="hidden" onchange="caricaTemplateExcelEsistente(this.files[0])">
-            <button onclick="document.getElementById('inputExcelBase').click()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer" title="Carica il file Registro_RdP.xlsx in uso per accodare i nuovi record">
-              <i class="fa-solid fa-folder-open text-amber-400"></i> Carica Excel Base
-            </button>
-            <button onclick="esportaRegistroExcelCompleto()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition cursor-pointer">
-              <i class="fa-solid fa-download"></i> Esporta Registro Excel (.xlsx)
-            </button>
-          </div>
+        <div class="text-[11px] text-slate-400 px-3 hidden xl:block">
+          Archivi indipendenti salvati localmente • Esportazione Excel dedicata per ciascuna sezione
         </div>
       </div>
 
-      <!-- =====================================================================
-           SEZIONE 1: DRAG & DROP PDF (SINGOLO O MULTIPLO)
-           ===================================================================== -->
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-          <h2 class="text-xs font-black text-sky-400 uppercase tracking-wider flex items-center gap-2">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> Acquisizione Automatica Rapporti di Prova (.PDF)
-          </h2>
-          <span class="text-[11px] text-slate-400">Supporta caricamento singolo o multiplo (Arcadia, Ireos, laboratori accreditati)</span>
-        </div>
+      <!-- #####################################################################
+           MACRO-SEZIONE A: TERRE E ROCCE DA SCAVO (154 COLONNE COMPLETO)
+           ##################################################################### -->
+      <div id="sezione-terre-wrapper" class="space-y-6">
 
-        <div id="dropzone" class="dropzone rounded-xl p-6 sm:p-8 text-center cursor-pointer bg-slate-950/60 flex flex-col items-center justify-center gap-2.5">
-          <div class="w-12 h-12 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 flex items-center justify-center text-xl shadow">
-            <i class="fa-solid fa-cloud-arrow-up"></i>
+        <!-- BARRA AZIONI EXCEL & STATISTICHE RAPIDE TERRE -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+          <!-- KPI Sintesi -->
+          <div class="lg:col-span-5 grid grid-cols-3 gap-3">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Totale RdP Terre</span>
+              <div class="flex items-baseline justify-between mt-1">
+                <span id="kpi-totale" class="text-2xl font-black text-white">0</span>
+                <i class="fa-solid fa-file-lines text-sky-400 text-sm"></i>
+              </div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sottoprod. 1/A</span>
+              <div class="flex items-baseline justify-between mt-1">
+                <span id="kpi-1a" class="text-2xl font-black text-emerald-400">0</span>
+                <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+              </div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ultimo Prog.</span>
+              <div class="flex items-baseline justify-between mt-1">
+                <span id="kpi-prog" class="text-xl font-black text-amber-400">-</span>
+                <i class="fa-solid fa-hashtag text-amber-400 text-sm"></i>
+              </div>
+            </div>
           </div>
-          <div>
-            <p class="text-xs sm:text-sm font-bold text-white">Trascina qui uno o più file PDF dei Rapporti di Prova oppure clicca per selezionarli</p>
-            <p class="text-[11px] text-slate-400 mt-1">Estrazione automatica di localizzazione (WBS, Cantiere, Sito, p.k.), CdC, Certificato e tutti i 97 analiti chimici</p>
-          </div>
-          <input type="file" id="fileInputPdf" accept=".pdf" multiple class="hidden" onchange="gestisciFileSelezionati(this.files)">
-        </div>
 
-        <!-- CODA FILE MULTIPLI SE CARICATI PIÙ PDF INSIEME -->
-        <div id="coda-pdf-container" class="hidden mt-4 bg-slate-950 border border-slate-800 rounded-xl p-3.5">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-bold text-sky-400 uppercase tracking-wider flex items-center gap-2">
-              <i class="fa-solid fa-layer-group"></i> Coda PDF Estratti (<span id="coda-count">0</span>) — Seleziona un certificato per verificarlo e archiviarlo
-            </span>
-            <button onclick="svuotaCodaPDF()" class="text-[11px] text-slate-400 hover:text-rose-400 font-bold cursor-pointer">Chiudi coda</button>
+          <!-- Gestione Template Excel Esistente & Esportazione -->
+          <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="space-y-1">
+              <div class="text-xs font-black text-white uppercase tracking-wide flex items-center gap-2">
+                <i class="fa-solid fa-file-excel text-emerald-400"></i> Integrazione Registro Excel Terre (154 Colonne)
+              </div>
+              <p id="template-status" class="text-[11px] text-slate-400">
+                Nessun file Excel base caricato. L'esportazione genererà la struttura completa a 154 colonne.
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+              <input type="file" id="inputExcelBase" accept=".xlsx,.xls" class="hidden" onchange="caricaTemplateExcelEsistente(this.files[0])">
+              <button onclick="document.getElementById('inputExcelBase').click()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer" title="Carica il file Registro_RdP.xlsx in uso per accodare i nuovi record">
+                <i class="fa-solid fa-folder-open text-amber-400"></i> Carica Excel Base
+              </button>
+              <button onclick="esportaRegistroExcelCompleto()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition cursor-pointer">
+                <i class="fa-solid fa-download"></i> Esporta Registro Terre (.xlsx)
+              </button>
+            </div>
           </div>
-          <div id="coda-pdf-list" class="flex flex-wrap gap-2"></div>
         </div>
 
         <!-- =====================================================================
-             SCHEDA DI VERIFICA & MODIFICA PRE-ARCHIVIAZIONE (TUTTI I CAMPI)
+             SEZIONE 1: DRAG & DROP PDF TERRE (SINGOLO O MULTIPLO)
              ===================================================================== -->
-        <div id="form-estratto-container" class="hidden mt-6 border border-sky-500/40 bg-slate-950/90 rounded-2xl p-5 sm:p-6 space-y-6 shadow-2xl">
-          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
-            <div>
-              <h3 class="text-sm font-black text-sky-400 uppercase tracking-wider flex items-center gap-2">
-                <i class="fa-solid fa-check-to-slot"></i> Verifica & Completa Dati Estratti (Mappatura Registro 154 Colonne)
-              </h3>
-              <p id="nome-file-corrente" class="text-[11px] text-slate-400 mt-0.5">File: -</p>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <h2 class="text-xs font-black text-sky-400 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Acquisizione Automatica Rapporti di Prova Terre (.PDF)
+            </h2>
+            <span class="text-[11px] text-slate-400">Supporta caricamento singolo o multiplo (Arcadia, Ireos, laboratori accreditati)</span>
+          </div>
+
+          <div id="dropzone" class="dropzone rounded-xl p-6 sm:p-8 text-center cursor-pointer bg-slate-950/60 flex flex-col items-center justify-center gap-2.5">
+            <div class="w-12 h-12 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 flex items-center justify-center text-xl shadow">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
             </div>
-            <div class="flex items-center gap-2">
-              <input type="hidden" id="edit_record_uid" value="">
-              <button onclick="chiudiAnteprimaPDF()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer">
+            <div>
+              <p class="text-xs sm:text-sm font-bold text-white">Trascina qui uno o più file PDF dei Rapporti di Prova Terre oppure clicca per selezionarli</p>
+              <p class="text-[11px] text-slate-400 mt-1">Estrazione automatica di localizzazione (WBS, Cantiere, Sito, p.k.), CdC, Certificato e tutti i 97 analiti chimici</p>
+            </div>
+            <input type="file" id="fileInputPdf" accept=".pdf" multiple class="hidden" onchange="gestisciFileSelezionati(this.files)">
+          </div>
+
+          <!-- CODA FILE MULTIPLI SE CARICATI PIÙ PDF INSIEME -->
+          <div id="coda-pdf-container" class="hidden mt-4 bg-slate-950 border border-slate-800 rounded-xl p-3.5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[11px] font-bold text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-layer-group"></i> Coda PDF Estratti (<span id="coda-count">0</span>) — Seleziona un certificato per verificarlo e archiviarlo
+              </span>
+              <button onclick="svuotaCodaPDF()" class="text-[11px] text-slate-400 hover:text-rose-400 font-bold cursor-pointer">Chiudi coda</button>
+            </div>
+            <div id="coda-pdf-list" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <!-- =====================================================================
+               SCHEDA DI VERIFICA & MODIFICA PRE-ARCHIVIAZIONE TERRE (TUTTI I CAMPI)
+               ===================================================================== -->
+          <div id="form-estratto-container" class="hidden mt-6 border border-sky-500/40 bg-slate-950/90 rounded-2xl p-5 sm:p-6 space-y-6 shadow-2xl">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div>
+                <h3 class="text-sm font-black text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                  <i class="fa-solid fa-check-to-slot"></i> Verifica & Completa Dati Estratti (Mappatura Registro 154 Colonne)
+                </h3>
+                <p id="nome-file-corrente" class="text-[11px] text-slate-400 mt-0.5">File: -</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="hidden" id="edit_record_uid" value="">
+                <button onclick="chiudiAnteprimaPDF()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer">
+                  Annulla
+                </button>
+                <button onclick="salvaRecordRdP()" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-black transition shadow-lg cursor-pointer flex items-center gap-2">
+                  <i class="fa-solid fa-floppy-disk"></i> Salva nel Registro Terre
+                </button>
+              </div>
+            </div>
+
+            <!-- BLOCCO A: IDENTIFICAZIONE, DATA E LOCALIZZAZIONE -->
+            <div class="space-y-3">
+              <h4 class="text-[11px] font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-location-dot"></i> 1. Progressivo, Data & Localizzazione Prelievo
+              </h4>
+              <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 text-xs">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Prog. n° (Col. B)</label>
+                  <input type="number" id="f_prog" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-amber-300 font-black outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Data Prelievo (Col. D)</label>
+                  <input type="text" id="f_data_prelievo" placeholder="GG/MM/AAAA" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white font-semibold outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-sky-400 mb-1">Prod. WBS (Col. F)</label>
+                  <input type="text" id="f_prod_wbs" placeholder="es. GN147" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-sky-400 mb-1">Prod. Cantiere (Col. G)</label>
+                  <input type="text" id="f_prod_cantiere" placeholder="es. COP5" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-sky-400 mb-1">Sito Produzione (Col. H)</label>
+                  <input type="text" id="f_prod_sito" placeholder="es. Vallemme" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Dep. Int. WBS (Col. I)</label>
+                  <input type="text" id="f_dep_wbs" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Dep. Int. Cantiere (Col. J)</label>
+                  <input type="text" id="f_dep_cantiere" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Dep. Int. Sito (Col. K)</label>
+                  <input type="text" id="f_dep_sito" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+              </div>
+            </div>
+
+            <!-- BLOCCO B: CAMPIONE, CDC & CERTIFICATO -->
+            <div class="space-y-3 border-t border-slate-800/80 pt-4">
+              <h4 class="text-[11px] font-black text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-file-signature"></i> 2. Campione, Catena di Custodia & Certificato Laboratorio
+              </h4>
+              <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Punto Prelievo (Col. M)</label>
+                  <input type="text" id="f_punto_prelievo" placeholder="Cumulo / Trincea..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Denominazione / Localizzazione (Col. N)</label>
+                  <input type="text" id="f_denominazione" placeholder="es. S1, RIBALTINA 3B..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white font-semibold outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">p.k. km (Col. O)</label>
+                  <input type="text" id="f_pk_km" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">p.k. hm (Col. P)</label>
+                  <input type="text" id="f_pk_hm" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Litologia (Col. Q)</label>
+                  <input type="text" id="f_litologia" placeholder="es. Metabasalti" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+
+                <div class="sm:col-span-2">
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Catena di Custodia n° (Col. S)</label>
+                  <input type="text" id="f_cdc" placeholder="CDC_..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Laboratorio (Col. T)</label>
+                  <input type="text" id="f_laboratorio" oninput="aggiornaAnnoLabCert()" placeholder="ARCADIA / IREOS" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white font-bold uppercase outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Certificato n° (Col. U)</label>
+                  <input type="text" id="f_certificato_num" oninput="aggiornaAnnoLabCert()" placeholder="es. 26LA12682" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-sky-300 font-bold outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Data Emissione (Col. V)</label>
+                  <input type="text" id="f_data_emissione" oninput="aggiornaAnnoLabCert()" placeholder="GG/MM/AAAA" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-emerald-400 mb-1">Anno_Lab_Cert (Col. W)</label>
+                  <input type="text" id="f_anno_lab_cert" readonly class="w-full bg-slate-900/60 border border-emerald-500/40 rounded-lg px-2.5 py-2 text-emerald-300 font-mono text-[11px] font-bold outline-none">
+                </div>
+              </div>
+            </div>
+
+            <!-- BLOCCO C: QUALIFICA MDS, CSC, AMIANTO, TENSIOATTIVI E NORMATIVA -->
+            <div class="space-y-3 border-t border-slate-800/80 pt-4">
+              <h4 class="text-[11px] font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-scale-balanced"></i> 3. Qualifica MdS, CSC (Tab. 1 All. 5), Amianto, Tensioattivi & Destinazione
+              </h4>
+              <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
+                <div>
+                  <label class="block text-[10px] font-bold text-emerald-400 mb-1">Sottoprodotto (Col. AK)</label>
+                  <select id="f_sottoprodotto" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white font-bold outline-none focus:border-sky-400">
+                    <option value="1/A">1/A (Verde/Residenziale)</option>
+                    <option value="1/B">1/B (Industriale/Comm.)</option>
+                    <option value="">Non Sottoprodotto (Rifiuto)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Sup. 1/A (Col. Y)</label>
+                  <input type="text" id="f_sup_1a" placeholder="Parametri sup. 1/A" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Sup. 1/B (Col. Z)</label>
+                  <input type="text" id="f_sup_1b" placeholder="Parametri sup. 1/B" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">CER (Col. AL)</label>
+                  <input type="text" id="f_cer" placeholder="es. 17 05 04" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Classe Pericol. (Col. AM)</label>
+                  <input type="text" id="f_classe_peric" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Amianto [SI_NO] (Col. AA)</label>
+                  <select id="f_amianto_sino" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                    <option value="NO">NO</option>
+                    <option value="SI">SI</option>
+                    <option value="">Non ricercato</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Amianto LQ (Col. AB)</label>
+                  <input type="text" id="f_amianto_lq" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Tipol. Amianto (Col. AC)</label>
+                  <input type="text" id="f_amianto_tipo" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Amianto DM 161/12 (Col. AD)</label>
+                  <input type="text" id="f_amianto_dm161" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Amianto DM 06/09/94 (Col. AE)</label>
+                  <input type="text" id="f_amianto_dm94" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Tipol. Schiumogeno (Col. AG)</label>
+                  <input type="text" id="f_tens_tipo" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Tensioattivi mg/kg (Col. AH)</label>
+                  <input type="text" id="f_tens_mgkg" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Tensioattivi SR (Col. AI)</label>
+                  <input type="text" id="f_tens_sr" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">DM 05/02/98 All.3 (Col. AO)</label>
+                  <input type="text" id="f_dm98" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">DM 27/09/10 Inerti (Col. AQ)</label>
+                  <input type="text" id="f_dm10_inerti" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">DM 27/09/10 Non Per. (Col. AR)</label>
+                  <input type="text" id="f_dm10_nonper" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">DM 27/09/10 Peric. (Col. AS)</label>
+                  <input type="text" id="f_dm10_per" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Destinaz. Effettiva (Col. AU)</label>
+                  <input type="text" id="f_destinazione" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Indagine Tipologia (Col. AW)</label>
+                  <input type="text" id="f_indagine_tipo" placeholder="Caratterizzazione..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Indagine Fase (Col. AX)</label>
+                  <input type="text" id="f_indagine_fase" placeholder="Corso d'opera..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">Note (Col. BA)</label>
+                  <input type="text" id="f_note" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-[10px] font-bold text-slate-400 mb-1">ID Record (Col. BD)</label>
+                  <input type="text" id="f_id_col_bd" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
+                </div>
+              </div>
+            </div>
+
+            <!-- BLOCCO D: TUTTI I 97 ANALITI CHIMICI (COLONNE BF -> EX) -->
+            <div class="space-y-3 border-t border-slate-800 pt-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h4 class="text-[11px] font-black text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-flask"></i> 4. Analiti Chimici Estratti — 97 Parametri (Colonne BF ➔ EX)
+                  </h4>
+                  <p class="text-[11px] text-slate-400">
+                    Valorizzati/Rilevati: <span id="badge-count-valorizzati" class="font-bold text-emerald-400">0</span> su 97 • Puoi filtrare o modificare ogni singolo valore prima di salvare
+                  </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <input type="text" id="filtro-analiti-preview" oninput="filtraAnalitiPreview()" placeholder="Cerca analita (es. Arsenico, Benzo...)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-sky-400">
+                  <select id="filtro-cat-preview" onchange="filtraAnalitiPreview()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-400">
+                    <option value="ALL">Tutti i 97 analiti</option>
+                    <option value="VALORIZZATI">Solo valorizzati / non vuoti</option>
+                    <option value="Metalli">Metalli & Metalloidi</option>
+                    <option value="Idrocarburi">Idrocarburi & BTEX</option>
+                    <option value="IPA">IPA (Policiclici)</option>
+                    <option value="Alifatici">Alifatici Clorurati</option>
+                    <option value="Aromatici">Nitro/Clorobenzeni & Fenoli</option>
+                    <option value="Altro">Fitofarmaci, PCB, Diossine, Amianto, Ftalati</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="max-h-[420px] overflow-y-auto bg-slate-900 border border-slate-800 rounded-xl">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead class="sticky top-0 bg-slate-800 text-slate-300 z-10 border-b border-slate-700">
+                    <tr>
+                      <th class="p-2.5 w-14 text-center">Col.</th>
+                      <th class="p-2.5">Parametro (Intestazione Esatta Excel)</th>
+                      <th class="p-2.5">Categoria</th>
+                      <th class="p-2.5 text-center w-20">U.M.</th>
+                      <th class="p-2.5 text-center w-36 text-sky-400">Valore Estratto</th>
+                      <th class="p-2.5 text-center w-24 text-emerald-400">Col. A</th>
+                      <th class="p-2.5 text-center w-24 text-amber-400">Col. B</th>
+                    </tr>
+                  </thead>
+                  <tbody id="preview-analiti-tbody" class="divide-y divide-slate-800"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2 border-t border-slate-800">
+              <button onclick="chiudiAnteprimaPDF()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer">
                 Annulla
               </button>
-              <button onclick="salvaRecordRdP()" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-black transition shadow-lg cursor-pointer flex items-center gap-2">
-                <i class="fa-solid fa-floppy-disk"></i> Salva nel Registro
+              <button onclick="salvaRecordRdP()" class="px-6 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-black transition shadow-lg cursor-pointer flex items-center gap-2">
+                <i class="fa-solid fa-check"></i> Conferma e Salva nel Registro
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- =====================================================================
+             SELETTORE SCHEDE OPERATIVE TERRE (TABS)
+             ===================================================================== -->
+        <div class="flex border-b border-slate-800 gap-6 text-xs sm:text-sm font-bold overflow-x-auto">
+          <button onclick="cambiaVista('tabella')" id="btn-tabella" class="pb-3 border-b-2 border-sky-400 text-sky-400 flex items-center gap-2 transition cursor-pointer whitespace-nowrap">
+            <i class="fa-solid fa-table-list"></i> Tab 1: Registro Generale RdP
+          </button>
+          <button onclick="cambiaVista('analiti')" id="btn-analiti" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition cursor-pointer whitespace-nowrap">
+            <i class="fa-solid fa-vials text-emerald-400"></i> Tab 2: Matrice Analiti Chimici (97 Parametri)
+          </button>
+          <button onclick="cambiaVista('cartelle')" id="btn-cartelle" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition cursor-pointer whitespace-nowrap">
+            <i class="fa-solid fa-folder-tree text-amber-400"></i> Tab 3: Vista Cartelle (Cantiere / WBS / Data)
+          </button>
+        </div>
+
+        <!-- =====================================================================
+             TAB 1: REGISTRO GENERALE RDP
+             ===================================================================== -->
+        <div id="vista-tabella" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <input type="text" id="filtroTesto" oninput="filtraTabellaRdP()" placeholder="Cerca Certificato, Denominazione, CdC, Prog..." class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-sky-500">
+            <select id="filtroQualifica" onchange="filtraTabellaRdP()" class="bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-sky-500">
+              <option value="">Tutte le Qualifiche (1/A, 1/B, Rifiuti)</option>
+              <option value="1/A">Sottoprodotto 1/A</option>
+              <option value="1/B">Sottoprodotto 1/B</option>
+              <option value="RIFIUTO">Rifiuto / Non Sottoprodotto</option>
+            </select>
+            <select id="filtroCantiereLab" onchange="filtraTabellaRdP()" class="bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-sky-500">
+              <option value="">Tutti i Cantieri / WBS</option>
+            </select>
+            <div class="flex items-center justify-between sm:justify-end gap-3 px-2">
+              <button onclick="apriNuovoRecordManuale()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-400 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+                <i class="fa-solid fa-plus"></i> Nuovo Manuale
               </button>
             </div>
           </div>
 
-          <!-- BLOCCO A: IDENTIFICAZIONE, DATA E LOCALIZZAZIONE -->
-          <div class="space-y-3">
-            <h4 class="text-[11px] font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
-              <i class="fa-solid fa-location-dot"></i> 1. Progressivo, Data & Localizzazione Prelievo
-            </h4>
-            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 text-xs">
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Prog. n° (Col. B)</label>
-                <input type="number" id="f_prog" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-amber-300 font-black outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Data Prelievo (Col. D)</label>
-                <input type="text" id="f_data_prelievo" placeholder="GG/MM/AAAA" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white font-semibold outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-sky-400 mb-1">Prod. WBS (Col. F)</label>
-                <input type="text" id="f_prod_wbs" placeholder="es. GN147" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-sky-400 mb-1">Prod. Cantiere (Col. G)</label>
-                <input type="text" id="f_prod_cantiere" placeholder="es. COP5" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-sky-400 mb-1">Sito Produzione (Col. H)</label>
-                <input type="text" id="f_prod_sito" placeholder="es. Vallemme" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Dep. Int. WBS (Col. I)</label>
-                <input type="text" id="f_dep_wbs" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Dep. Int. Cantiere (Col. J)</label>
-                <input type="text" id="f_dep_cantiere" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Dep. Int. Sito (Col. K)</label>
-                <input type="text" id="f_dep_sito" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-800/90 text-slate-300 border-b border-slate-700 text-[11px] uppercase">
+                    <th class="p-3">Prog.</th>
+                    <th class="p-3">Data Prelievo</th>
+                    <th class="p-3">WBS / Cantiere / Sito</th>
+                    <th class="p-3">Punto & Denominazione</th>
+                    <th class="p-3">Certificato & Lab</th>
+                    <th class="p-3">Anno_Lab_Cert</th>
+                    <th class="p-3 text-center">Qualifica</th>
+                    <th class="p-3 text-center">Analiti</th>
+                    <th class="p-3 text-center">Autore</th>
+                    <th class="p-3 text-center">Azioni</th>
+                  </tr>
+                </thead>
+                <tbody id="rdp-table-tbody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+              </table>
             </div>
           </div>
+        </div>
 
-          <!-- BLOCCO B: CAMPIONE, CDC & CERTIFICATO -->
-          <div class="space-y-3 border-t border-slate-800/80 pt-4">
-            <h4 class="text-[11px] font-black text-sky-400 uppercase tracking-wider flex items-center gap-2">
-              <i class="fa-solid fa-file-signature"></i> 2. Campione, Catena di Custodia & Certificato Laboratorio
-            </h4>
-            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
+        <!-- =====================================================================
+             TAB 2: MATRICE ANALITI CHIMICI (97 PARAMETRI)
+             ===================================================================== -->
+        <div id="vista-analiti" class="space-y-4 hidden">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl space-y-4">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 border-b border-slate-800 pb-3">
               <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Punto Prelievo (Col. M)</label>
-                <input type="text" id="f_punto_prelievo" placeholder="Cumulo / Trincea..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div class="sm:col-span-2">
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Denominazione / Localizzazione (Col. N)</label>
-                <input type="text" id="f_denominazione" placeholder="es. S1, RIBALTINA 3B..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white font-semibold outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">p.k. km (Col. O)</label>
-                <input type="text" id="f_pk_km" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">p.k. hm (Col. P)</label>
-                <input type="text" id="f_pk_hm" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Litologia (Col. Q)</label>
-                <input type="text" id="f_litologia" placeholder="es. Metabasalti" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-
-              <div class="sm:col-span-2">
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Catena di Custodia n° (Col. S)</label>
-                <input type="text" id="f_cdc" placeholder="CDC_..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Laboratorio (Col. T)</label>
-                <input type="text" id="f_laboratorio" oninput="aggiornaAnnoLabCert()" placeholder="ARCADIA / IREOS" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white font-bold uppercase outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Certificato n° (Col. U)</label>
-                <input type="text" id="f_certificato_num" oninput="aggiornaAnnoLabCert()" placeholder="es. 26LA12682" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-sky-300 font-bold outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Data Emissione (Col. V)</label>
-                <input type="text" id="f_data_emissione" oninput="aggiornaAnnoLabCert()" placeholder="GG/MM/AAAA" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-emerald-400 mb-1">Anno_Lab_Cert (Col. W)</label>
-                <input type="text" id="f_anno_lab_cert" readonly class="w-full bg-slate-900/60 border border-emerald-500/40 rounded-lg px-2.5 py-2 text-emerald-300 font-mono text-[11px] font-bold outline-none">
-              </div>
-            </div>
-          </div>
-
-          <!-- BLOCCO C: QUALIFICA MDS, CSC, AMIANTO, TENSIOATTIVI E NORMATIVA -->
-          <div class="space-y-3 border-t border-slate-800/80 pt-4">
-            <h4 class="text-[11px] font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-              <i class="fa-solid fa-scale-balanced"></i> 3. Qualifica MdS, CSC (Tab. 1 All. 5), Amianto, Tensioattivi & Destinazione
-            </h4>
-            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
-              <div>
-                <label class="block text-[10px] font-bold text-emerald-400 mb-1">Sottoprodotto (Col. AK)</label>
-                <select id="f_sottoprodotto" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white font-bold outline-none focus:border-sky-400">
-                  <option value="1/A">1/A (Verde/Residenziale)</option>
-                  <option value="1/B">1/B (Industriale/Comm.)</option>
-                  <option value="">Non Sottoprodotto (Rifiuto)</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Sup. 1/A (Col. Y)</label>
-                <input type="text" id="f_sup_1a" placeholder="Parametri sup. 1/A" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Sup. 1/B (Col. Z)</label>
-                <input type="text" id="f_sup_1b" placeholder="Parametri sup. 1/B" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">CER (Col. AL)</label>
-                <input type="text" id="f_cer" placeholder="es. 17 05 04" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Classe Pericol. (Col. AM)</label>
-                <input type="text" id="f_classe_peric" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Amianto [SI_NO] (Col. AA)</label>
-                <select id="f_amianto_sino" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-                  <option value="NO">NO</option>
-                  <option value="SI">SI</option>
-                  <option value="">Non ricercato</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Amianto LQ (Col. AB)</label>
-                <input type="text" id="f_amianto_lq" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Tipol. Amianto (Col. AC)</label>
-                <input type="text" id="f_amianto_tipo" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Amianto DM 161/12 (Col. AD)</label>
-                <input type="text" id="f_amianto_dm161" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Amianto DM 06/09/94 (Col. AE)</label>
-                <input type="text" id="f_amianto_dm94" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Tipol. Schiumogeno (Col. AG)</label>
-                <input type="text" id="f_tens_tipo" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Tensioattivi mg/kg (Col. AH)</label>
-                <input type="text" id="f_tens_mgkg" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Tensioattivi SR (Col. AI)</label>
-                <input type="text" id="f_tens_sr" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">DM 05/02/98 All.3 (Col. AO)</label>
-                <input type="text" id="f_dm98" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">DM 27/09/10 Inerti (Col. AQ)</label>
-                <input type="text" id="f_dm10_inerti" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">DM 27/09/10 Non Per. (Col. AR)</label>
-                <input type="text" id="f_dm10_nonper" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">DM 27/09/10 Peric. (Col. AS)</label>
-                <input type="text" id="f_dm10_per" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Destinaz. Effettiva (Col. AU)</label>
-                <input type="text" id="f_destinazione" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Indagine Tipologia (Col. AW)</label>
-                <input type="text" id="f_indagine_tipo" placeholder="Caratterizzazione..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Indagine Fase (Col. AX)</label>
-                <input type="text" id="f_indagine_fase" placeholder="Corso d'opera..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div class="sm:col-span-2">
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Note (Col. BA)</label>
-                <input type="text" id="f_note" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-              <div class="sm:col-span-2">
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">ID Record (Col. BD)</label>
-                <input type="text" id="f_id_col_bd" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none focus:border-sky-400">
-              </div>
-            </div>
-          </div>
-
-          <!-- BLOCCO D: TUTTI I 97 ANALITI CHIMICI (COLONNE BF -> EX) -->
-          <div class="space-y-3 border-t border-slate-800 pt-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h4 class="text-[11px] font-black text-sky-400 uppercase tracking-wider flex items-center gap-2">
-                  <i class="fa-solid fa-flask"></i> 4. Analiti Chimici Estratti — 97 Parametri (Colonne BF ➔ EX)
-                </h4>
-                <p class="text-[11px] text-slate-400">
-                  Valorizzati/Rilevati: <span id="badge-count-valorizzati" class="font-bold text-emerald-400">0</span> su 97 • Puoi filtrare o modificare ogni singolo valore prima di salvare
-                </p>
+                <h3 class="text-sm font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                  <i class="fa-solid fa-table-columns"></i> Matrice Chimica Completa (Colonne BF ➔ EX — 97 Analiti)
+                </h3>
+                <p class="text-[11px] text-slate-400">Confronto automatico dei valori con i limiti CSC Tab. 1 All. 5 Parte IV D.Lgs. 152/06 (Col. A e Col. B)</p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
-                <input type="text" id="filtro-analiti-preview" oninput="filtraAnalitiPreview()" placeholder="Cerca analita (es. Arsenico, Benzo...)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-sky-400">
-                <select id="filtro-cat-preview" onchange="filtraAnalitiPreview()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-400">
-                  <option value="ALL">Tutti i 97 analiti</option>
-                  <option value="VALORIZZATI">Solo valorizzati / non vuoti</option>
+                <select id="filtro-matrice-cat" onchange="renderMatriceAnaliti()" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-sky-400">
+                  <option value="ALL">Mostra tutte le 97 colonne analiti</option>
+                  <option value="VALORIZZATI">Solo colonne con almeno 1 valore rilevato</option>
                   <option value="Metalli">Metalli & Metalloidi</option>
                   <option value="Idrocarburi">Idrocarburi & BTEX</option>
                   <option value="IPA">IPA (Policiclici)</option>
@@ -486,157 +633,252 @@
                   <option value="Aromatici">Nitro/Clorobenzeni & Fenoli</option>
                   <option value="Altro">Fitofarmaci, PCB, Diossine, Amianto, Ftalati</option>
                 </select>
+                <button onclick="esportaRegistroExcelCompleto()" class="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+                  <i class="fa-solid fa-file-excel"></i> Esporta Excel Completo
+                </button>
               </div>
             </div>
 
-            <div class="max-h-[420px] overflow-y-auto bg-slate-900 border border-slate-800 rounded-xl">
-              <table class="w-full text-left border-collapse text-xs">
-                <thead class="sticky top-0 bg-slate-800 text-slate-300 z-10 border-b border-slate-700">
-                  <tr>
-                    <th class="p-2.5 w-14 text-center">Col.</th>
-                    <th class="p-2.5">Parametro (Intestazione Esatta Excel)</th>
-                    <th class="p-2.5">Categoria</th>
-                    <th class="p-2.5 text-center w-20">U.M.</th>
-                    <th class="p-2.5 text-center w-36 text-sky-400">Valore Estratto</th>
-                    <th class="p-2.5 text-center w-24 text-emerald-400">Col. A</th>
-                    <th class="p-2.5 text-center w-24 text-amber-400">Col. B</th>
-                  </tr>
-                </thead>
-                <tbody id="preview-analiti-tbody" class="divide-y divide-slate-800"></tbody>
+            <div class="overflow-x-auto max-h-[600px]">
+              <table class="w-full text-left border-collapse text-[11px]" id="tabella-analiti-97">
+                <thead id="thead-analiti-97" class="sticky top-0 z-20"></thead>
+                <tbody id="tbody-analiti-97" class="divide-y divide-slate-800 text-slate-300"></tbody>
               </table>
             </div>
           </div>
-
-          <div class="flex justify-end gap-3 pt-2 border-t border-slate-800">
-            <button onclick="chiudiAnteprimaPDF()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer">
-              Annulla
-            </button>
-            <button onclick="salvaRecordRdP()" class="px-6 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-black transition shadow-lg cursor-pointer flex items-center gap-2">
-              <i class="fa-solid fa-check"></i> Conferma e Salva nel Registro
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- =====================================================================
-           SELETTORE SCHEDE OPERATIVE (TABS)
-           ===================================================================== -->
-      <div class="flex border-b border-slate-800 gap-6 text-xs sm:text-sm font-bold overflow-x-auto">
-        <button onclick="cambiaVista('tabella')" id="btn-tabella" class="pb-3 border-b-2 border-sky-400 text-sky-400 flex items-center gap-2 transition cursor-pointer whitespace-nowrap">
-          <i class="fa-solid fa-table-list"></i> Tab 1: Registro Generale RdP
-        </button>
-        <button onclick="cambiaVista('analiti')" id="btn-analiti" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition cursor-pointer whitespace-nowrap">
-          <i class="fa-solid fa-vials text-emerald-400"></i> Tab 2: Matrice Analiti Chimici (97 Parametri)
-        </button>
-        <button onclick="cambiaVista('cartelle')" id="btn-cartelle" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition cursor-pointer whitespace-nowrap">
-          <i class="fa-solid fa-folder-tree text-amber-400"></i> Tab 3: Vista Cartelle (Cantiere / WBS / Data)
-        </button>
-      </div>
-
-      <!-- =====================================================================
-           TAB 1: REGISTRO GENERALE RDP
-           ===================================================================== -->
-      <div id="vista-tabella" class="space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          <input type="text" id="filtroTesto" oninput="filtraTabellaRdP()" placeholder="Cerca Certificato, Denominazione, CdC, Prog..." class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-sky-500">
-          <select id="filtroQualifica" onchange="filtraTabellaRdP()" class="bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-sky-500">
-            <option value="">Tutte le Qualifiche (1/A, 1/B, Rifiuti)</option>
-            <option value="1/A">Sottoprodotto 1/A</option>
-            <option value="1/B">Sottoprodotto 1/B</option>
-            <option value="RIFIUTO">Rifiuto / Non Sottoprodotto</option>
-          </select>
-          <select id="filtroCantiereLab" onchange="filtraTabellaRdP()" class="bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-sky-500">
-            <option value="">Tutti i Cantieri / WBS</option>
-          </select>
-          <div class="flex items-center justify-between sm:justify-end gap-3 px-2">
-            <button onclick="apriNuovoRecordManuale()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-400 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
-              <i class="fa-solid fa-plus"></i> Nuovo Manuale
-            </button>
-          </div>
         </div>
 
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr class="bg-slate-800/90 text-slate-300 border-b border-slate-700 text-[11px] uppercase">
-                  <th class="p-3">Prog.</th>
-                  <th class="p-3">Data Prelievo</th>
-                  <th class="p-3">WBS / Cantiere / Sito</th>
-                  <th class="p-3">Punto & Denominazione</th>
-                  <th class="p-3">Certificato & Lab</th>
-                  <th class="p-3">Anno_Lab_Cert</th>
-                  <th class="p-3 text-center">Qualifica</th>
-                  <th class="p-3 text-center">Analiti</th>
-                  <th class="p-3 text-center">Autore</th>
-                  <th class="p-3 text-center">Azioni</th>
-                </tr>
-              </thead>
-              <tbody id="rdp-table-tbody" class="divide-y divide-slate-800 text-slate-300"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- =====================================================================
-           TAB 2: MATRICE ANALITI CHIMICI (97 PARAMETRI)
-           ===================================================================== -->
-      <div id="vista-analiti" class="space-y-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl space-y-4">
-          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 border-b border-slate-800 pb-3">
-            <div>
-              <h3 class="text-sm font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                <i class="fa-solid fa-table-columns"></i> Matrice Chimica Completa (Colonne BF ➔ EX — 97 Analiti)
+        <!-- =====================================================================
+             TAB 3: VISTA CARTELLE (CANTIERE / WBS / DATA PRELIEVO)
+             ===================================================================== -->
+        <div id="vista-cartelle" class="space-y-4 hidden">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 class="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-folder-tree text-amber-400"></i> Navigazione Gerarchica (Cantiere / WBS ➔ Data Prelievo)
               </h3>
-              <p class="text-[11px] text-slate-400">Confronto automatico dei valori con i limiti CSC Tab. 1 All. 5 Parte IV D.Lgs. 152/06 (Col. A e Col. B)</p>
+              <span class="text-xs text-slate-400">Clicca su un certificato per aprirne la scheda dettagliata</span>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
-              <select id="filtro-matrice-cat" onchange="renderMatriceAnaliti()" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-sky-400">
-                <option value="ALL">Mostra tutte le 97 colonne analiti</option>
-                <option value="VALORIZZATI">Solo colonne con almeno 1 valore rilevato</option>
-                <option value="Metalli">Metalli & Metalloidi</option>
-                <option value="Idrocarburi">Idrocarburi & BTEX</option>
-                <option value="IPA">IPA (Policiclici)</option>
-                <option value="Alifatici">Alifatici Clorurati</option>
-                <option value="Aromatici">Nitro/Clorobenzeni & Fenoli</option>
-                <option value="Altro">Fitofarmaci, PCB, Diossine, Amianto, Ftalati</option>
-              </select>
-              <button onclick="esportaRegistroExcelCompleto()" class="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
-                <i class="fa-solid fa-file-excel"></i> Esporta Excel Completo
+            <div id="albero-cartelle-container" class="space-y-3"></div>
+          </div>
+        </div>
+
+      </div> <!-- FINE MACRO-SEZIONE A: TERRE -->
+
+      <!-- #####################################################################
+           MACRO-SEZIONE B: REGISTRO RDP RIFIUTI (SEPARATO E STRINGATO)
+           ##################################################################### -->
+      <div id="sezione-rifiuti-wrapper" class="hidden space-y-6">
+
+        <!-- KPI E AZIONI EXCEL RIFIUTI -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+          <div class="lg:col-span-5 grid grid-cols-3 gap-3">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Totale RdP Rifiuti</span>
+              <div class="flex items-baseline justify-between mt-1">
+                <span id="kpi-rif-totale" class="text-2xl font-black text-white">0</span>
+                <i class="fa-solid fa-recycle text-rose-400 text-sm"></i>
+              </div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Non Pericolosi</span>
+              <div class="flex items-baseline justify-between mt-1">
+                <span id="kpi-rif-nonper" class="text-2xl font-black text-emerald-400">0</span>
+                <i class="fa-solid fa-shield-check text-emerald-400 text-sm"></i>
+              </div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pericolosi (*)</span>
+              <div class="flex items-baseline justify-between mt-1">
+                <span id="kpi-rif-per" class="text-2xl font-black text-amber-400">0</span>
+                <i class="fa-solid fa-skull-crossbones text-amber-400 text-sm"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="space-y-1">
+              <div class="text-xs font-black text-rose-400 uppercase tracking-wide flex items-center gap-2">
+                <i class="fa-solid fa-file-excel text-rose-400"></i> Registro Separato RdP Rifiuti (D.Lgs. 152/06 Parte IV)
+              </div>
+              <p class="text-[11px] text-slate-400">
+                Archivio snello per caratterizzazione rifiuti, codici EER/CER, test di cessione (DM 27/09/2010) e classi HP.
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+              <button onclick="apriNuovoRifiutoManuale()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-rose-300 px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer">
+                <i class="fa-solid fa-plus"></i> Nuovo Rifiuto Manuale
+              </button>
+              <button onclick="esportaRegistroRifiutiExcel()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 shadow-lg shadow-rose-600/20 transition cursor-pointer">
+                <i class="fa-solid fa-download"></i> Esporta Registro Rifiuti (.xlsx)
               </button>
             </div>
           </div>
+        </div>
 
-          <div class="overflow-x-auto max-h-[600px]">
-            <table class="w-full text-left border-collapse text-[11px]" id="tabella-analiti-97">
-              <thead id="thead-analiti-97" class="sticky top-0 z-20"></thead>
-              <tbody id="tbody-analiti-97" class="divide-y divide-slate-800 text-slate-300"></tbody>
-            </table>
+        <!-- DROPZONE & SCHEDA VERIFICA RAPIDA RIFIUTI -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <h2 class="text-xs font-black text-rose-400 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Acquisizione Automatica RdP Rifiuti (.PDF)
+            </h2>
+            <span class="text-[11px] text-slate-400">Estrazione mirata: Certificato, Laboratorio, Codice EER/CER, Pericolosità, Eluato e Giudizio</span>
+          </div>
+
+          <div id="dropzone-rifiuti" class="dropzone-rifiuti rounded-xl p-6 sm:p-8 text-center cursor-pointer bg-slate-950/60 flex flex-col items-center justify-center gap-2.5">
+            <div class="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center text-xl shadow">
+              <i class="fa-solid fa-file-circle-plus"></i>
+            </div>
+            <div>
+              <p class="text-xs sm:text-sm font-bold text-white">Trascina qui uno o più PDF di RdP Rifiuti oppure clicca per selezionarli</p>
+              <p class="text-[11px] text-slate-400 mt-1">Compila automaticamente la scheda semplificata con Codice CER, WBS/Cantiere, Laboratorio ed Esito analitico</p>
+            </div>
+            <input type="file" id="fileInputRifiutiPdf" accept=".pdf" multiple class="hidden" onchange="gestisciFileRifiutiSelezionati(this.files)">
+          </div>
+
+          <!-- CODA MULTIPLA RIFIUTI -->
+          <div id="coda-rifiuti-container" class="hidden mt-4 bg-slate-950 border border-slate-800 rounded-xl p-3.5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[11px] font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-layer-group"></i> Coda PDF Rifiuti (<span id="coda-rifiuti-count">0</span>)
+              </span>
+              <button onclick="svuotaCodaRifiuti()" class="text-[11px] text-slate-400 hover:text-rose-400 font-bold cursor-pointer">Chiudi coda</button>
+            </div>
+            <div id="coda-rifiuti-list" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <!-- SCHEDA DI VERIFICA STRINGATA RIFIUTI -->
+          <div id="form-rifiuti-container" class="hidden mt-6 border border-rose-500/40 bg-slate-950/90 rounded-2xl p-5 sm:p-6 space-y-5 shadow-2xl">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div>
+                <h3 class="text-sm font-black text-rose-400 uppercase tracking-wider flex items-center gap-2">
+                  <i class="fa-solid fa-clipboard-check"></i> Verifica & Archiviazione RdP Rifiuto (Scheda Essenziale)
+                </h3>
+                <p id="nome-file-rifiuto-corrente" class="text-[11px] text-slate-400 mt-0.5">File: -</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="hidden" id="edit_rifiuto_uid" value="">
+                <button onclick="chiudiAnteprimaRifiuto()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer">
+                  Annulla
+                </button>
+                <button onclick="salvaRecordRifiuto()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black transition shadow-lg cursor-pointer flex items-center gap-2">
+                  <i class="fa-solid fa-floppy-disk"></i> Salva nel Registro Rifiuti
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-xs">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">Prog. Rifiuto n°</label>
+                <input type="number" id="r_prog" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-amber-300 font-black outline-none focus:border-rose-400">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">Data Prelievo / Campionamento</label>
+                <input type="text" id="r_data_prelievo" placeholder="GG/MM/AAAA" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-semibold outline-none focus:border-rose-400">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-rose-400 mb-1">Codice EER / CER *</label>
+                <input type="text" id="r_cer" placeholder="es. 17 05 04 oppure 17 05 03*" class="w-full bg-slate-900 border border-rose-500/40 rounded-lg px-3 py-2 text-rose-300 font-black outline-none focus:border-rose-400">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">Classificazione / Pericolosità</label>
+                <select id="r_pericolosita" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold outline-none focus:border-rose-400">
+                  <option value="Non Pericoloso">Non Pericoloso</option>
+                  <option value="Pericoloso">Pericoloso (*)</option>
+                  <option value="Specchio Non Pericoloso">Voce a Specchio — Non Pericoloso</option>
+                  <option value="Specchio Pericoloso">Voce a Specchio — Pericoloso (*)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">WBS / Cantiere Produttore</label>
+                <input type="text" id="r_cantiere" placeholder="es. GN147 / COP5 Vallemme" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-rose-400">
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">Descrizione Campione / Tipologia Rifiuto</label>
+                <input type="text" id="r_descrizione" placeholder="es. Fanghi di perforazione / Terre non riutilizzabili..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-semibold outline-none focus:border-rose-400">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">Catena di Custodia (CdC)</label>
+                <input type="text" id="r_cdc" placeholder="CDC_..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-rose-400">
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">Laboratorio</label>
+                <input type="text" id="r_laboratorio" placeholder="ARCADIA / IREOS" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold uppercase outline-none focus:border-rose-400">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-sky-400 mb-1">Numero Certificato RdP *</label>
+                <input type="text" id="r_certificato" placeholder="es. 26LA14012" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sky-300 font-bold outline-none focus:border-rose-400">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">Data Emissione RdP</label>
+                <input type="text" id="r_data_emissione" placeholder="GG/MM/AAAA" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-rose-400">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-emerald-400 mb-1">Ammissibilità / Destinazione</label>
+                <select id="r_ammissibilita" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold outline-none focus:border-rose-400">
+                  <option value="Recupero R5 / R13">Recupero (R5 / R13)</option>
+                  <option value="Discarica Inerti (DM 27/09/10)">Discarica Inerti (DM 27/09/10)</option>
+                  <option value="Discarica Non Pericolosi">Discarica Rifiuti Non Pericolosi</option>
+                  <option value="Discarica Pericolosi">Discarica Rifiuti Pericolosi</option>
+                  <option value="Impianto Trattamento Chimico-Fisico">Impianto Trattamento / Smaltimento</option>
+                </select>
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">Parametri Critici / Esito Test Cessione (Eluato)</label>
+                <input type="text" id="r_parametri_critici" placeholder="es. Cloruri, Solfati, DOC, Idrocarburi C10-C40 nei limiti" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-rose-400">
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">Note / Impianto di Destino</label>
+                <input type="text" id="r_note" placeholder="Eventuali annotazioni operative o destinatario..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-rose-400">
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- =====================================================================
-           TAB 3: VISTA CARTELLE (CANTIERE / WBS / DATA PRELIEVO)
-           ===================================================================== -->
-      <div id="vista-cartelle" class="space-y-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-            <h3 class="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-              <i class="fa-solid fa-folder-tree text-amber-400"></i> Navigazione Gerarchica (Cantiere / WBS ➔ Data Prelievo)
-            </h3>
-            <span class="text-xs text-slate-400">Clicca su un certificato per aprirne la scheda dettagliata</span>
+        <!-- FILTRI E TABELLA REGISTRO RIFIUTI -->
+        <div class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input type="text" id="filtroTestoRifiuti" oninput="renderTabellaRifiuti()" placeholder="Cerca Codice CER, Certificato, Cantiere, Descrizione..." class="sm:col-span-2 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-rose-500">
+            <select id="filtroPericRifiuti" onchange="renderTabellaRifiuti()" class="bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-rose-500">
+              <option value="ALL">Tutte le Classificazioni</option>
+              <option value="NON_PER">Solo Non Pericolosi</option>
+              <option value="PER">Solo Pericolosi (*)</option>
+            </select>
           </div>
-          <div id="albero-cartelle-container" class="space-y-3"></div>
+
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-800/90 text-slate-300 border-b border-slate-700 text-[11px] uppercase">
+                    <th class="p-3">Prog.</th>
+                    <th class="p-3">Data Prelievo</th>
+                    <th class="p-3 text-center">Codice CER</th>
+                    <th class="p-3">Classificazione</th>
+                    <th class="p-3">Cantiere / Descrizione Rifiuto</th>
+                    <th class="p-3">Certificato & Lab</th>
+                    <th class="p-3">Ammissibilità / Esito</th>
+                    <th class="p-3 text-center">Autore</th>
+                    <th class="p-3 text-center">Azioni</th>
+                  </tr>
+                </thead>
+                <tbody id="rifiuti-table-tbody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+
+      </div> <!-- FINE MACRO-SEZIONE B: RIFIUTI -->
 
     </main>
 
     <!-- FOOTER -->
     <footer class="border-t border-slate-800/80 bg-slate-950 py-4 px-4 sm:px-8 text-center sm:text-left">
       <div class="max-w-[1600px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
-        <span>Ufficio Ambiente — Terzo Valico dei Giovi • Registro Rapporti di Prova (154 Colonne)</span>
+        <span>Ufficio Ambiente — Terzo Valico dei Giovi • Registro Rapporti di Prova Terre (154 Colonne) & Rifiuti</span>
         <span>Elaborazione locale sicura • Compatibile con <code class="text-slate-400">fac-simile_Registro_RdP.xlsx</code></span>
       </div>
     </footer>
@@ -644,7 +886,7 @@
   </div>
 
   <!-- =====================================================================
-       MOTORE JAVASCRIPT COMPLETO E DEFINITIVO
+       MOTORE JAVASCRIPT COMPLETO E DEFINITIVO (TERRE + RIFIUTI)
        ===================================================================== -->
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -761,26 +1003,31 @@
     ];
 
     const STORAGE_KEY_RECORDS = "tv_registro_rdp_154_records_v1";
+    const STORAGE_KEY_RIFIUTI = "tv_registro_rdp_rifiuti_v1";
     const STORAGE_KEY_SESSION = "tv_registro_rdp_session_v1";
 
     let utenteCorrente = null;
     let archivioRecords = [];
+    let archivioRifiuti = [];
     let codaPdfEstratti = [];
     let indiceCodaAttivo = -1;
+    let codaRifiutiEstratti = [];
+    let indiceCodaRifiutiAttivo = -1;
     let templateWorkbookBase = null;
 
     document.addEventListener("DOMContentLoaded", () => {
       popolaListaUtentiDemo();
       verificaSessioneAttiva();
       configuraDropzone();
+      configuraDropzoneRifiuti();
     });
 
     // =========================================================================
-    // FUNZIONE DI PROTEZIONE VISIBILITA' BOX CREDENZIALI (SOLO LEONE)
+    // PROTEZIONE VISIBILITA' BOX CREDENZIALI (SOLO LEONE BASTIANCICH)
     // =========================================================================
     function controllaUsernameLeone(valore) {
       const wrapper = document.getElementById("admin-credenziali-wrapper");
-    if (valore.trim().toLowerCase() === "leone") {
+      if (valore.trim().toLowerCase() === "leone") {
         wrapper.classList.remove("hidden");
       } else {
         wrapper.classList.add("hidden");
@@ -792,7 +1039,6 @@
       const username = document.getElementById("login-username").value.trim().toLowerCase();
       const password = document.getElementById("login-password").value;
       const wrapper = document.getElementById("admin-credenziali-wrapper");
-      
       if (username === "leone" && password === "TerzoValico2026") {
         wrapper.classList.remove("hidden");
       }
@@ -899,6 +1145,31 @@
       mostraToast("Disconnessione effettuata", "info");
     }
 
+    // =========================================================================
+    // SWITCH TRA SEZIONE 1 (TERRE 154 COL.) E SEZIONE 2 (RIFIUTI SEMPLIFICATO)
+    // =========================================================================
+    function cambiaSezionePrincipale(sezione) {
+      const btnTerre = document.getElementById("macro-btn-terre");
+      const btnRifiuti = document.getElementById("macro-btn-rifiuti");
+      const wrapTerre = document.getElementById("sezione-terre-wrapper");
+      const wrapRifiuti = document.getElementById("sezione-rifiuti-wrapper");
+
+      if (sezione === "terre") {
+        btnTerre.className = "px-4 py-2.5 rounded-xl bg-sky-500 text-slate-950 text-xs font-black uppercase tracking-wider shadow-lg shadow-sky-500/20 transition cursor-pointer flex items-center gap-2";
+        btnRifiuti.className = "px-4 py-2.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 text-slate-300 text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center gap-2";
+        wrapTerre.classList.remove("hidden");
+        wrapRifiuti.classList.add("hidden");
+      } else {
+        btnRifiuti.className = "px-4 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/20 transition cursor-pointer flex items-center gap-2";
+        btnTerre.className = "px-4 py-2.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 text-slate-300 text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center gap-2";
+        wrapRifiuti.classList.remove("hidden");
+        wrapTerre.classList.add("hidden");
+      }
+    }
+
+    // =========================================================================
+    // INIZIALIZZAZIONE ARCHIVI LOCALSTORAGE
+    // =========================================================================
     function inizializzaDatiArchivio() {
       const raw = localStorage.getItem(STORAGE_KEY_RECORDS);
       if (raw) {
@@ -921,11 +1192,36 @@
         ];
         salvaSuLocalStorage();
       }
+
+      const rawRif = localStorage.getItem(STORAGE_KEY_RIFIUTI);
+      if (rawRif) {
+        try { archivioRifiuti = JSON.parse(rawRif); } catch (e) { archivioRifiuti = []; }
+      }
+      if (!archivioRifiuti || archivioRifiuti.length === 0) {
+        archivioRifiuti = [
+          {
+            uid: "rif_seed_1", prog: 101, data_prelievo: "15/10/2026", cer: "17 05 04",
+            pericolosita: "Non Pericoloso", cantiere: "GN147 / COP5 Vallemme",
+            descrizione: "Terre e rocce da scavo non riutilizzabili come sottoprodotto",
+            cdc: "CDC_RIF_20261015_01", laboratorio: "ARCADIA", certificato: "26LA13910",
+            data_emissione: "21/10/2026", ammissibilita: "Discarica Inerti (DM 27/09/10)",
+            parametri_critici: "Eluato conforme Tab. 2 DM 27/09/2010",
+            note: "Conferimento autorizzato", autore: "Leone Bastiancich", autoreIniziali: "LB"
+          }
+        ];
+        salvaRifiutiSuLocalStorage();
+      }
+
       aggiornaTuttaUI();
+      aggiornaUIRifiuti();
     }
 
     function salvaSuLocalStorage() {
       localStorage.setItem(STORAGE_KEY_RECORDS, JSON.stringify(archivioRecords));
+    }
+
+    function salvaRifiutiSuLocalStorage() {
+      localStorage.setItem(STORAGE_KEY_RIFIUTI, JSON.stringify(archivioRifiuti));
     }
 
     function calcolaProssimoProgressivo() {
@@ -937,49 +1233,18 @@
       return maxProg + 1;
     }
 
-    function configuraDropzone() {
-      const dropzone = document.getElementById("dropzone");
-      const fileInput = document.getElementById("fileInputPdf");
-      if (!dropzone) return;
-      dropzone.addEventListener("click", () => fileInput.click());
-      ["dragenter", "dragover"].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add("dragover"); }));
-      ["dragleave", "drop"].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove("dragover"); }));
-      dropzone.addEventListener("drop", e => {
-        const files = e.dataTransfer.files;
-        if (files && files.length > 0) gestisciFileSelezionati(files);
-      });
+    function calcolaProssimoProgressivoRifiuti() {
+      if (archivioRifiuti.length === 0) return 101;
+      const maxProg = archivioRifiuti.reduce((max, r) => {
+        const n = parseInt(r.prog, 10);
+        return (!isNaN(n) && n > max) ? n : max;
+      }, 100);
+      return maxProg + 1;
     }
 
-    async function gestisciFileSelezionati(fileList) {
-      const pdfFiles = Array.from(fileList).filter(f => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
-      if (pdfFiles.length === 0) {
-        mostraToast("Seleziona almeno un file in formato PDF valido.", "error");
-        return;
-      }
-      mostraToast(`Lettura ed estrazione di ${pdfFiles.length} PDF in corso...`, "info");
-      codaPdfEstratti = [];
-      let progCorrente = calcolaProssimoProgressivo();
-
-      for (let i = 0; i < pdfFiles.length; i++) {
-        const file = pdfFiles[i];
-        try {
-          const testoSpaziale = await estraiTestoSpazialePDF(file);
-          const recordEstratto = parseTestoCertificatoPDF(testoSpaziale, file.name, progCorrente + i);
-          codaPdfEstratti.push({ fileName: file.name, record: recordEstratto, salvato: false });
-        } catch (err) {
-          console.error("Errore parsing PDF:", file.name, err);
-          mostraToast(`Errore nella lettura di ${file.name}`, "error");
-        }
-      }
-
-      if (codaPdfEstratti.length > 0) {
-        renderCodaPDF();
-        selezionaDaCodaPDF(0);
-        mostraToast(`Estrazione completata per ${codaPdfEstratti.length} file PDF!`, "success");
-      }
-      document.getElementById("fileInputPdf").value = "";
-    }
-
+    // =========================================================================
+    // ESTRAZIONE SPAZIALE PDF.JS CONDIVISA
+    // =========================================================================
     function estraiTestoSpazialePDF(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -1009,6 +1274,52 @@
         reader.onerror = reject;
         reader.readAsArrayBuffer(file);
       });
+    }
+
+    // =========================================================================
+    // MOTORE SEZIONE 1: TERRE E ROCCE DA SCAVO (154 COLONNE)
+    // =========================================================================
+    function configuraDropzone() {
+      const dropzone = document.getElementById("dropzone");
+      const fileInput = document.getElementById("fileInputPdf");
+      if (!dropzone) return;
+      dropzone.addEventListener("click", () => fileInput.click());
+      ["dragenter", "dragover"].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add("dragover"); }));
+      ["dragleave", "drop"].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove("dragover"); }));
+      dropzone.addEventListener("drop", e => {
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) gestisciFileSelezionati(files);
+      });
+    }
+
+    async function gestisciFileSelezionati(fileList) {
+      const pdfFiles = Array.from(fileList).filter(f => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
+      if (pdfFiles.length === 0) {
+        mostraToast("Seleziona almeno un file in formato PDF valido.", "error");
+        return;
+      }
+      mostraToast(`Lettura ed estrazione di ${pdfFiles.length} PDF Terre in corso...`, "info");
+      codaPdfEstratti = [];
+      let progCorrente = calcolaProssimoProgressivo();
+
+      for (let i = 0; i < pdfFiles.length; i++) {
+        const file = pdfFiles[i];
+        try {
+          const testoSpaziale = await estraiTestoSpazialePDF(file);
+          const recordEstratto = parseTestoCertificatoPDF(testoSpaziale, file.name, progCorrente + i);
+          codaPdfEstratti.push({ fileName: file.name, record: recordEstratto, salvato: false });
+        } catch (err) {
+          console.error("Errore parsing PDF:", file.name, err);
+          mostraToast(`Errore nella lettura di ${file.name}`, "error");
+        }
+      }
+
+      if (codaPdfEstratti.length > 0) {
+        renderCodaPDF();
+        selezionaDaCodaPDF(0);
+        mostraToast(`Estrazione completata per ${codaPdfEstratti.length} file PDF!`, "success");
+      }
+      document.getElementById("fileInputPdf").value = "";
     }
 
     function formattaValoreItaliano(val) {
@@ -1174,6 +1485,9 @@
       document.getElementById("f_prod_wbs").value = rec.prod_wbs || "";
       document.getElementById("f_prod_cantiere").value = rec.prod_cantiere || "";
       document.getElementById("f_prod_sito").value = rec.prod_sito || "";
+      document.getElementById("f_dep_wbs").value = rec.dep_wbs || "";
+      document.getElementById("f_dep_cantiere").value = rec.dep_cantiere || "";
+      document.getElementById("f_dep_sito").value = rec.dep_sito || "";
       document.getElementById("f_punto_prelievo").value = rec.punto_prelievo || "";
       document.getElementById("f_denominazione").value = rec.denominazione || "";
       document.getElementById("f_pk_km").value = rec.pk_km || "";
@@ -1188,7 +1502,22 @@
       document.getElementById("f_sup_1a").value = rec.sup_1a || "";
       document.getElementById("f_sup_1b").value = rec.sup_1b || "";
       document.getElementById("f_cer").value = rec.cer || "";
+      document.getElementById("f_classe_peric").value = rec.classe_peric || "";
       document.getElementById("f_amianto_sino").value = rec.amianto_sino || "NO";
+      document.getElementById("f_amianto_lq").value = rec.amianto_lq || "";
+      document.getElementById("f_amianto_tipo").value = rec.amianto_tipo || "";
+      document.getElementById("f_amianto_dm161").value = rec.amianto_dm161 || "";
+      document.getElementById("f_amianto_dm94").value = rec.amianto_dm94 || "";
+      document.getElementById("f_tens_tipo").value = rec.tens_tipo || "";
+      document.getElementById("f_tens_mgkg").value = rec.tens_mgkg || "";
+      document.getElementById("f_tens_sr").value = rec.tens_sr || "";
+      document.getElementById("f_dm98").value = rec.dm98 || "";
+      document.getElementById("f_dm10_inerti").value = rec.dm10_inerti || "";
+      document.getElementById("f_dm10_nonper").value = rec.dm10_nonper || "";
+      document.getElementById("f_dm10_per").value = rec.dm10_per || "";
+      document.getElementById("f_destinazione").value = rec.destinazione || "";
+      document.getElementById("f_indagine_tipo").value = rec.indagine_tipo || "";
+      document.getElementById("f_indagine_fase").value = rec.indagine_fase || "";
       document.getElementById("f_note").value = rec.note || "";
       document.getElementById("f_id_col_bd").value = rec.id_col_bd || "";
 
@@ -1281,6 +1610,9 @@
         prod_wbs: document.getElementById("f_prod_wbs").value.trim(),
         prod_cantiere: document.getElementById("f_prod_cantiere").value.trim(),
         prod_sito: document.getElementById("f_prod_sito").value.trim(),
+        dep_wbs: document.getElementById("f_dep_wbs").value.trim(),
+        dep_cantiere: document.getElementById("f_dep_cantiere").value.trim(),
+        dep_sito: document.getElementById("f_dep_sito").value.trim(),
         punto_prelievo: document.getElementById("f_punto_prelievo").value.trim(),
         denominazione: document.getElementById("f_denominazione").value.trim(),
         pk_km: document.getElementById("f_pk_km").value.trim(),
@@ -1294,8 +1626,23 @@
         sup_1a: document.getElementById("f_sup_1a").value.trim(),
         sup_1b: document.getElementById("f_sup_1b").value.trim(),
         amianto_sino: document.getElementById("f_amianto_sino").value,
+        amianto_lq: document.getElementById("f_amianto_lq").value.trim(),
+        amianto_tipo: document.getElementById("f_amianto_tipo").value.trim(),
+        amianto_dm161: document.getElementById("f_amianto_dm161").value.trim(),
+        amianto_dm94: document.getElementById("f_amianto_dm94").value.trim(),
+        tens_tipo: document.getElementById("f_tens_tipo").value.trim(),
+        tens_mgkg: document.getElementById("f_tens_mgkg").value.trim(),
+        tens_sr: document.getElementById("f_tens_sr").value.trim(),
         sottoprodotto: document.getElementById("f_sottoprodotto").value,
         cer: document.getElementById("f_cer").value.trim(),
+        classe_peric: document.getElementById("f_classe_peric").value.trim(),
+        dm98: document.getElementById("f_dm98").value.trim(),
+        dm10_inerti: document.getElementById("f_dm10_inerti").value.trim(),
+        dm10_nonper: document.getElementById("f_dm10_nonper").value.trim(),
+        dm10_per: document.getElementById("f_dm10_per").value.trim(),
+        destinazione: document.getElementById("f_destinazione").value.trim(),
+        indagine_tipo: document.getElementById("f_indagine_tipo").value.trim(),
+        indagine_fase: document.getElementById("f_indagine_fase").value.trim(),
         note: document.getElementById("f_note").value.trim(),
         id_col_bd: document.getElementById("f_id_col_bd").value.trim() || `${progVal}_${certNum}`,
         autore: utenteCorrente ? utenteCorrente.nomeCompleto : "Operatore",
@@ -1325,7 +1672,7 @@
     }
 
     function eliminaRecordRdP(uid) {
-      mostraConferma("Elimina RdP", "Vuoi eliminare questo record?", () => {
+      mostraConferma("Elimina RdP Terre", "Vuoi eliminare questo record dal registro Terre?", () => {
         archivioRecords = archivioRecords.filter(r => r.uid !== uid);
         salvaSuLocalStorage();
         aggiornaTuttaUI();
@@ -1364,14 +1711,17 @@
     function filtraTabellaRdP() {
       const testo = document.getElementById("filtroTesto").value.toLowerCase();
       const qualifica = document.getElementById("filtroQualifica").value;
+      const cantiereFiltro = document.getElementById("filtroCantiereLab").value;
       const filtrati = archivioRecords.filter(r => {
-        const blob = `${r.prog} ${r.certificato_num} ${r.denominazione} ${r.cdc} ${r.prod_wbs}`.toLowerCase();
+        const blob = `${r.prog} ${r.certificato_num} ${r.denominazione} ${r.cdc} ${r.prod_wbs} ${r.prod_cantiere}`.toLowerCase();
         const matchTesto = blob.includes(testo);
         let matchQual = true;
         if (qualifica === "1/A") matchQual = r.sottoprodotto === "1/A";
         else if (qualifica === "1/B") matchQual = r.sottoprodotto === "1/B";
         else if (qualifica === "RIFIUTO") matchQual = !r.sottoprodotto;
-        return matchTesto && matchQual;
+        let matchCant = true;
+        if (cantiereFiltro) matchCant = (r.prod_wbs === cantiereFiltro || r.prod_cantiere === cantiereFiltro);
+        return matchTesto && matchQual && matchCant;
       });
       renderTabellaGenerale(filtrati);
     }
@@ -1384,23 +1734,26 @@
         return;
       }
       lista.forEach(r => {
-        const badgeQual = r.sottoprodotto === "1/A" ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">1/A</span>` : `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/15 text-amber-400 border border-amber-500/30">1/B</span>`;
+        let badgeQual = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500/15 text-rose-400 border border-rose-500/30">RIFIUTO</span>`;
+        if (r.sottoprodotto === "1/A") badgeQual = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">1/A</span>`;
+        else if (r.sottoprodotto === "1/B") badgeQual = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/15 text-amber-400 border border-amber-500/30">1/B</span>`;
+
         const tr = document.createElement("tr");
         tr.className = "hover:bg-slate-800/50 transition";
         tr.innerHTML = `
           <td class="p-3 font-black text-amber-400">${r.prog}</td>
           <td class="p-3 text-slate-300">${r.data_prelievo || "-"}</td>
-          <td class="p-3 font-bold text-white">${r.prod_wbs || "-"}</td>
-          <td class="p-3 text-slate-200">${r.denominazione || "-"}</td>
-          <td class="p-3 font-bold text-sky-400">${r.certificato_num}</td>
+          <td class="p-3 font-bold text-white">${[r.prod_wbs, r.prod_cantiere, r.prod_sito].filter(Boolean).join(" • ") || "-"}</td>
+          <td class="p-3 text-slate-200"><span class="text-slate-400 text-[10px] block">${r.punto_prelievo || ""}</span>${r.denominazione || "-"}</td>
+          <td class="p-3 font-bold text-sky-400">${r.certificato_num} <span class="text-[10px] text-slate-400 block">${r.laboratorio || ""}</span></td>
           <td class="p-3 font-mono text-[10px] text-emerald-300">${r.anno_lab_cert || "-"}</td>
           <td class="p-3 text-center">${badgeQual}</td>
           <td class="p-3 text-center font-bold text-sky-300">${Object.values(r.analiti || {}).filter(v => v && v !== "n.r.").length} / 97</td>
-          <td class="p-3 text-center"><span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-black">${r.autoreIniziali || "LB"}</span></td>
+          <td class="p-3 text-center"><span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-black" title="${r.autore || ''}">${r.autoreIniziali || "LB"}</span></td>
           <td class="p-3 text-center">
             <div class="inline-flex items-center gap-1.5">
-              <button onclick="modificaRecordEsistente('${r.uid}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-sky-500/25 text-sky-400"><i class="fa-solid fa-pen"></i></button>
-              <button onclick="eliminaRecordRdP('${r.uid}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/25 text-rose-400"><i class="fa-solid fa-trash"></i></button>
+              <button onclick="modificaRecordEsistente('${r.uid}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-sky-500/25 text-sky-400 cursor-pointer" title="Modifica"><i class="fa-solid fa-pen"></i></button>
+              <button onclick="eliminaRecordRdP('${r.uid}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/25 text-rose-400 cursor-pointer" title="Elimina"><i class="fa-solid fa-trash"></i></button>
             </div>
           </td>
         `;
@@ -1409,19 +1762,31 @@
     }
 
     function renderMatriceAnaliti() {
+      const catFiltro = document.getElementById("filtro-matrice-cat").value;
       const thead = document.getElementById("thead-analiti-97");
       const tbody = document.getElementById("tbody-analiti-97");
-      let headHtml = `<tr class="bg-slate-800 text-slate-200 border-b border-slate-700"><th class="p-2.5 sticky left-0 bg-slate-800 z-20">Prog. / Certificato</th>`;
-      ANALITI_97.forEach(an => { headHtml += `<th class="p-2 text-center min-w-[115px]"><div class="text-[9px] font-mono text-slate-400">${an.col}</div><div class="text-white font-bold">${an.excelHeader}</div></th>`; });
+
+      const analitiVisibili = ANALITI_97.filter(an => {
+        if (catFiltro === "ALL") return true;
+        if (catFiltro === "VALORIZZATI") {
+          return archivioRecords.some(r => r.analiti && r.analiti[an.key] && r.analiti[an.key] !== "" && r.analiti[an.key] !== "n.r.");
+        }
+        return an.cat === catFiltro;
+      });
+
+      let headHtml = `<tr class="bg-slate-800 text-slate-200 border-b border-slate-700"><th class="p-2.5 sticky left-0 bg-slate-800 z-20 min-w-[170px]">Prog. / Certificato</th>`;
+      analitiVisibili.forEach(an => {
+        headHtml += `<th class="p-2 text-center min-w-[115px]"><div class="text-[9px] font-mono text-slate-400">${an.col} • A:${an.colA} B:${an.colB}</div><div class="text-white font-bold">${an.excelHeader}</div></th>`;
+      });
       headHtml += `</tr>`;
       thead.innerHTML = headHtml;
 
       tbody.innerHTML = "";
       archivioRecords.forEach(r => {
         let rowHtml = `<tr class="hover:bg-slate-800/40"><td class="p-2.5 sticky left-0 bg-slate-900 z-10 font-black text-amber-400">${r.prog} — ${r.certificato_num}</td>`;
-        ANALITI_97.forEach(an => {
+        analitiVisibili.forEach(an => {
           const val = (r.analiti && r.analiti[an.key]) ? r.analiti[an.key] : "-";
-          rowHtml += `<td class="p-2 text-center font-mono text-sky-300">${val}</td>`;
+          rowHtml += `<td class="p-2 text-center font-mono ${val !== '-' && val !== 'n.r.' ? 'text-sky-300 font-bold' : 'text-slate-500'}">${val}</td>`;
         });
         rowHtml += `</tr>`;
         tbody.innerHTML += rowHtml;
@@ -1432,19 +1797,19 @@
       const container = document.getElementById("albero-cartelle-container");
       const tree = {};
       archivioRecords.forEach(r => {
-        const area = r.prod_wbs || "Cantiere Generale";
+        const area = [r.prod_wbs, r.prod_cantiere, r.prod_sito].filter(Boolean).join(" • ") || "Cantiere Generale";
         if (!tree[area]) tree[area] = [];
         tree[area].push(r);
       });
       let html = "";
-      Object.keys(tree).forEach(area => {
-        html += `<div class="border border-slate-800 rounded-xl p-4 bg-slate-950/60 space-y-2"><div class="text-sky-400 font-bold text-xs"><i class="fa-solid fa-folder-open"></i> WBS: ${area}</div><div class="pl-4 space-y-1">`;
+      Object.keys(tree).sort().forEach(area => {
+        html += `<div class="border border-slate-800 rounded-xl p-4 bg-slate-950/60 space-y-2"><div class="text-sky-400 font-bold text-xs flex items-center gap-2"><i class="fa-solid fa-folder-open text-amber-400"></i> ${area} (${tree[area].length} RdP)</div><div class="pl-4 space-y-1.5">`;
         tree[area].forEach(r => {
-          html += `<div class="text-xs text-slate-300 flex justify-between bg-slate-900 p-2 rounded-lg"><span>Cert. <b>${r.certificato_num}</b> (${r.denominazione})</span><button onclick="modificaRecordEsistente('${r.uid}')" class="text-sky-400 font-bold">Apri</button></div>`;
+          html += `<div class="text-xs text-slate-300 flex flex-wrap items-center justify-between gap-2 bg-slate-900 border border-slate-800/80 p-2.5 rounded-lg"><span><b class="text-amber-400">#${r.prog}</b> • ${r.data_prelievo} • Cert. <b class="text-sky-400">${r.certificato_num}</b> (${r.denominazione})</span><button onclick="modificaRecordEsistente('${r.uid}')" class="text-sky-400 hover:text-sky-300 font-bold cursor-pointer">Apri Scheda ➔</button></div>`;
         });
         html += `</div></div>`;
       });
-      container.innerHTML = html;
+      container.innerHTML = html || `<p class="text-xs text-slate-500">Nessun record archiviato.</p>`;
     }
 
     function cambiaVista(tab) {
@@ -1476,35 +1841,427 @@
     }
 
     function esportaRegistroExcelCompleto() {
-      if (archivioRecords.length === 0) { mostraToast("Nessun record da esportare.", "error"); return; }
+      if (archivioRecords.length === 0) { mostraToast("Nessun record Terre da esportare.", "error"); return; }
       const wb = XLSX.utils.book_new();
-      const aoa = [new Array(154).fill(""), new Array(154).fill("")];
+      const headerRow = new Array(154).fill("");
+      headerRow[1] = "Prog.";
+      headerRow[3] = "Data Prelievo";
+      headerRow[5] = "Prod. WBS";
+      headerRow[6] = "Prod. Cantiere";
+      headerRow[7] = "Sito Produzione";
+      headerRow[12] = "Punto Prelievo";
+      headerRow[13] = "Denominazione";
+      headerRow[14] = "p.k. km";
+      headerRow[15] = "p.k. hm";
+      headerRow[16] = "Litologia";
+      headerRow[18] = "Catena Custodia";
+      headerRow[19] = "Laboratorio";
+      headerRow[20] = "Certificato n°";
+      headerRow[21] = "Data Emissione";
+      headerRow[22] = "Anno_Lab_Cert";
+      headerRow[26] = "Amianto SI/NO";
+      headerRow[36] = "Sottoprodotto";
+      headerRow[37] = "CER";
+      headerRow[52] = "Note";
+      headerRow[55] = "ID Record";
+      ANALITI_97.forEach((an, idx) => { headerRow[57 + idx] = an.excelHeader; });
+
+      const aoa = [new Array(154).fill(""), headerRow];
       archivioRecords.forEach(rec => {
         const row = new Array(154).fill("");
         row[1] = Number(rec.prog) || rec.prog;
         row[3] = rec.data_prelievo || "";
         row[5] = rec.prod_wbs || "";
+        row[6] = rec.prod_cantiere || "";
+        row[7] = rec.prod_sito || "";
+        row[12] = rec.punto_prelievo || "";
         row[13] = rec.denominazione || "";
+        row[14] = rec.pk_km || "";
+        row[15] = rec.pk_hm || "";
+        row[16] = rec.litologia || "";
+        row[18] = rec.cdc || "";
+        row[19] = rec.laboratorio || "";
         row[20] = rec.certificato_num || "";
+        row[21] = rec.data_emissione || "";
         row[22] = rec.anno_lab_cert || "";
+        row[26] = rec.amianto_sino || "";
         row[36] = rec.sottoprodotto || "";
+        row[37] = rec.cer || "";
+        row[52] = rec.note || "";
+        row[55] = rec.id_col_bd || "";
         ANALITI_97.forEach((an, idx) => { row[57 + idx] = (rec.analiti && rec.analiti[an.key]) ? rec.analiti[an.key] : ""; });
         aoa.push(row);
       });
       const ws = XLSX.utils.aoa_to_sheet(aoa);
       XLSX.utils.book_append_sheet(wb, ws, "Foglio1");
-      XLSX.writeFile(wb, "Registro_RdP_QHSE.xlsx");
-      mostraToast("File Excel esportato con successo!", "success");
+      XLSX.writeFile(wb, "Registro_RdP_Terre_154Col.xlsx");
+      mostraToast("File Excel Terre (154 colonne) esportato!", "success");
     }
 
+    // =========================================================================
+    // MOTORE SEZIONE 2: REGISTRO RDP RIFIUTI (SEPARATO E STRINGATO)
+    // =========================================================================
+    function configuraDropzoneRifiuti() {
+      const dz = document.getElementById("dropzone-rifiuti");
+      const fi = document.getElementById("fileInputRifiutiPdf");
+      if (!dz) return;
+      dz.addEventListener("click", () => fi.click());
+      ["dragenter", "dragover"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add("dragover"); }));
+      ["dragleave", "drop"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove("dragover"); }));
+      dz.addEventListener("drop", e => {
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) gestisciFileRifiutiSelezionati(files);
+      });
+    }
+
+    async function gestisciFileRifiutiSelezionati(fileList) {
+      const pdfFiles = Array.from(fileList).filter(f => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
+      if (pdfFiles.length === 0) {
+        mostraToast("Seleziona almeno un file PDF valido per i rifiuti.", "error");
+        return;
+      }
+      mostraToast(`Analisi di ${pdfFiles.length} PDF Rifiuti in corso...`, "info");
+      codaRifiutiEstratti = [];
+      let progRif = calcolaProssimoProgressivoRifiuti();
+
+      for (let i = 0; i < pdfFiles.length; i++) {
+        const file = pdfFiles[i];
+        try {
+          const testo = await estraiTestoSpazialePDF(file);
+          const recRif = parseTestoCertificatoRifiuto(testo, file.name, progRif + i);
+          codaRifiutiEstratti.push({ fileName: file.name, record: recRif, salvato: false });
+        } catch (err) {
+          console.error("Errore parsing PDF Rifiuto:", file.name, err);
+          mostraToast(`Errore nella lettura di ${file.name}`, "error");
+        }
+      }
+
+      if (codaRifiutiEstratti.length > 0) {
+        renderCodaRifiuti();
+        selezionaDaCodaRifiuti(0);
+        mostraToast(`Estratti ${codaRifiutiEstratti.length} RdP Rifiuti! Verifica i campi e salva.`, "success");
+      }
+      document.getElementById("fileInputRifiutiPdf").value = "";
+    }
+
+    function parseTestoCertificatoRifiuto(testo, nomeFile, progAssegnato) {
+      const matchCert = testo.match(/Rapporto\s+di\s+[Pp]rova\s+n[°º.]?\s*([A-Z0-9\-\/]+)/i) || testo.match(/Certificato\s+n[°º.]?\s*([A-Z0-9\-\/]+)/i) || testo.match(/\b(\d{2}[A-Z]{2}\d{4,6})\b/);
+      const certificato = matchCert ? matchCert[1].trim() : nomeFile.replace(/\.pdf$/i, "");
+
+      let laboratorio = "ARCADIA";
+      if (/ireos/i.test(testo)) laboratorio = "IREOS";
+      else if (/arcadia/i.test(testo)) laboratorio = "ARCADIA";
+
+      const matchDataPrel = testo.match(/Data\s+(?:di\s+)?prelievo[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i) || testo.match(/Data\s+campionamento[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i);
+      const matchDataEmiss = testo.match(/Data\s+(?:di\s+)?emissione[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i);
+      const tutteDate = testo.match(/\b(\d{2}\/\d{2}\/\d{4})\b/g) || [];
+      const dataPrelievo = (matchDataPrel ? matchDataPrel[1] : (tutteDate[0] || new Date().toLocaleDateString("it-IT"))).replace(/-/g, "/");
+      const dataEmissione = (matchDataEmiss ? matchDataEmiss[1] : (tutteDate[tutteDate.length - 1] || dataPrelievo)).replace(/-/g, "/");
+
+      // Estrazione Codice EER / CER (es. 17 05 04, 17 05 03*, 170504, 16 10 02, 19 08 14, ecc.)
+      const matchCer = testo.match(/(?:EER|CER)[:\s]*(\d{2}\s*\d{2}\s*\d{2}\s*\*?)/i) || testo.match(/\b((?:16|17|19|20)\s*\d{2}\s*\d{2}\s*\*?)\b/);
+      let cer = matchCer ? matchCer[1].replace(/\s+/g, " ").trim() : "17 05 04";
+      if (/^\d{6}\*?$/.test(cer)) {
+        cer = cer.replace(/^(\d{2})(\d{2})(\d{2})(\*?)$/, "$1 $2 $3$4");
+      }
+
+      let pericolosita = cer.includes("*") ? "Pericoloso" : "Non Pericoloso";
+      if (/non\s+pericolos/i.test(testo) && !cer.includes("*")) pericolosita = "Non Pericoloso";
+
+      const matchWbs = testo.match(/\b(GN\d{2,4}|NV\d{2,4}|INVS|AL\d{2,4}|GE\d{2,4})\b/i);
+      const matchCant = testo.match(/\b(COP\s*\d{1,2}|Finestra\s+[A-Za-z0-9]+|Galleria\s+[A-Za-z0-9]+)\b/i);
+      let sito = "";
+      if (/vallemme/i.test(testo)) sito = "Vallemme";
+      else if (/libarna/i.test(testo)) sito = "Libarna";
+      else if (/arquata/i.test(testo)) sito = "Arquata Scrivia";
+      const cantiere = [matchWbs ? matchWbs[1].toUpperCase() : "", matchCant ? matchCant[1].toUpperCase().replace(/\s+/g, "") : "", sito].filter(Boolean).join(" • ") || "Terzo Valico";
+
+      const matchDenom = testo.match(/Descrizione(?:\s+campione|\s+rifiuto)?[:\s]+([^\n\r]{3,75})/i) || testo.match(/Denominazione[:\s]+([^\n\r]{3,75})/i);
+      const descrizione = matchDenom ? matchDenom[1].trim() : `Caratterizzazione Rifiuto EER ${cer}`;
+
+      const matchCdc = testo.match(/\b(CDC[_-][A-Z0-9_-]+)\b/i);
+      const cdc = matchCdc ? matchCdc[1].trim() : "";
+
+      let ammissibilita = "Discarica Rifiuti Non Pericolosi";
+      if (cer.includes("*")) ammissibilita = "Discarica Pericolosi";
+      else if (/inerti/i.test(testo)) ammissibilita = "Discarica Inerti (DM 27/09/10)";
+      else if (/recupero/i.test(testo)) ammissibilita = "Recupero R5 / R13";
+
+      let parametriCritici = "Test di cessione / Eluato analizzato";
+      if (/conforme/i.test(testo)) parametriCritici = "Parametri eluato e tal quale conformi ai limiti";
+
+      return {
+        uid: "rif_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
+        prog: progAssegnato,
+        data_prelievo: dataPrelievo,
+        cer: cer,
+        pericolosita: pericolosita,
+        cantiere: cantiere,
+        descrizione: descrizione,
+        cdc: cdc,
+        laboratorio: laboratorio,
+        certificato: certificato,
+        data_emissione: dataEmissione,
+        ammissibilita: ammissibilita,
+        parametri_critici: parametriCritici,
+        note: "",
+        autore: utenteCorrente ? utenteCorrente.nomeCompleto : "Operatore",
+        autoreIniziali: utenteCorrente ? utenteCorrente.iniziali : "OP"
+      };
+    }
+
+    function renderCodaRifiuti() {
+      const container = document.getElementById("coda-rifiuti-container");
+      const list = document.getElementById("coda-rifiuti-list");
+      document.getElementById("coda-rifiuti-count").innerText = codaRifiutiEstratti.length;
+      if (codaRifiutiEstratti.length === 0) { container.classList.add("hidden"); return; }
+      container.classList.remove("hidden");
+      list.innerHTML = "";
+      codaRifiutiEstratti.forEach((item, idx) => {
+        const isSelected = idx === indiceCodaRifiutiAttivo;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-2 transition cursor-pointer ${
+          isSelected ? "bg-rose-500/20 border-rose-400 text-rose-300" : item.salvato ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-slate-900 border-slate-700 text-slate-300"
+        }`;
+        btn.innerHTML = `<i class="fa-solid ${item.salvato ? "fa-circle-check text-emerald-400" : "fa-file-pdf text-rose-400"}"></i><span>${item.record.certificato || item.fileName} (${item.record.cer})</span>`;
+        btn.onclick = () => selezionaDaCodaRifiuti(idx);
+        list.appendChild(btn);
+      });
+    }
+
+    function selezionaDaCodaRifiuti(idx) {
+      indiceCodaRifiutiAttivo = idx;
+      renderCodaRifiuti();
+      compilaSchedaRifiuto(codaRifiutiEstratti[idx].record, codaRifiutiEstratti[idx].fileName);
+    }
+
+    function svuotaCodaRifiuti() {
+      codaRifiutiEstratti = [];
+      indiceCodaRifiutiAttivo = -1;
+      document.getElementById("coda-rifiuti-container").classList.add("hidden");
+      chiudiAnteprimaRifiuto();
+    }
+
+    function apriNuovoRifiutoManuale() {
+      compilaSchedaRifiuto({
+        uid: "",
+        prog: calcolaProssimoProgressivoRifiuti(),
+        data_prelievo: new Date().toLocaleDateString("it-IT"),
+        cer: "17 05 04",
+        pericolosita: "Non Pericoloso",
+        cantiere: "",
+        descrizione: "",
+        cdc: "",
+        laboratorio: "ARCADIA",
+        certificato: "",
+        data_emissione: new Date().toLocaleDateString("it-IT"),
+        ammissibilita: "Discarica Rifiuti Non Pericolosi",
+        parametri_critici: "",
+        note: ""
+      }, "Inserimento Manuale RdP Rifiuto");
+    }
+
+    function modificaRecordRifiuto(uid) {
+      const rec = archivioRifiuti.find(r => r.uid === uid);
+      if (rec) compilaSchedaRifiuto(rec, `Modifica RdP Rifiuto Prog. n° ${rec.prog}`);
+    }
+
+    function compilaSchedaRifiuto(rec, titolo) {
+      document.getElementById("nome-file-rifiuto-corrente").innerText = `Sorgente: ${titolo}`;
+      document.getElementById("edit_rifiuto_uid").value = rec.uid || "";
+      document.getElementById("r_prog").value = rec.prog || "";
+      document.getElementById("r_data_prelievo").value = rec.data_prelievo || "";
+      document.getElementById("r_cer").value = rec.cer || "";
+      document.getElementById("r_pericolosita").value = rec.pericolosita || "Non Pericoloso";
+      document.getElementById("r_cantiere").value = rec.cantiere || "";
+      document.getElementById("r_descrizione").value = rec.descrizione || "";
+      document.getElementById("r_cdc").value = rec.cdc || "";
+      document.getElementById("r_laboratorio").value = rec.laboratorio || "";
+      document.getElementById("r_certificato").value = rec.certificato || "";
+      document.getElementById("r_data_emissione").value = rec.data_emissione || "";
+      document.getElementById("r_ammissibilita").value = rec.ammissibilita || "Discarica Rifiuti Non Pericolosi";
+      document.getElementById("r_parametri_critici").value = rec.parametri_critici || "";
+      document.getElementById("r_note").value = rec.note || "";
+
+      document.getElementById("form-rifiuti-container").classList.remove("hidden");
+      document.getElementById("form-rifiuti-container").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function chiudiAnteprimaRifiuto() {
+      document.getElementById("form-rifiuti-container").classList.add("hidden");
+    }
+
+    function salvaRecordRifiuto() {
+      const cert = document.getElementById("r_certificato").value.trim();
+      const cer = document.getElementById("r_cer").value.trim();
+      if (!cert || !cer) {
+        mostraToast("Inserisci almeno Codice CER e Numero Certificato.", "error");
+        return;
+      }
+
+      const existingUid = document.getElementById("edit_rifiuto_uid").value;
+      const progVal = parseInt(document.getElementById("r_prog").value, 10) || calcolaProssimoProgressivoRifiuti();
+
+      const recRif = {
+        uid: existingUid || ("rif_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6)),
+        prog: progVal,
+        data_prelievo: document.getElementById("r_data_prelievo").value.trim(),
+        cer: cer,
+        pericolosita: document.getElementById("r_pericolosita").value,
+        cantiere: document.getElementById("r_cantiere").value.trim(),
+        descrizione: document.getElementById("r_descrizione").value.trim(),
+        cdc: document.getElementById("r_cdc").value.trim(),
+        laboratorio: document.getElementById("r_laboratorio").value.trim().toUpperCase(),
+        certificato: cert,
+        data_emissione: document.getElementById("r_data_emissione").value.trim(),
+        ammissibilita: document.getElementById("r_ammissibilita").value,
+        parametri_critici: document.getElementById("r_parametri_critici").value.trim(),
+        note: document.getElementById("r_note").value.trim(),
+        autore: utenteCorrente ? utenteCorrente.nomeCompleto : "Operatore",
+        autoreIniziali: utenteCorrente ? utenteCorrente.iniziali : "OP"
+      };
+
+      const idx = archivioRifiuti.findIndex(r => r.uid === existingUid);
+      if (idx !== -1) {
+        archivioRifiuti[idx] = recRif;
+        mostraToast(`RdP Rifiuto Prog. n° ${progVal} aggiornato!`, "success");
+      } else {
+        archivioRifiuti.unshift(recRif);
+        mostraToast(`RdP Rifiuto ${cert} (CER ${cer}) salvato!`, "success");
+      }
+
+      salvaRifiutiSuLocalStorage();
+      aggiornaUIRifiuti();
+
+      if (indiceCodaRifiutiAttivo !== -1 && codaRifiutiEstratti[indiceCodaRifiutiAttivo]) {
+        codaRifiutiEstratti[indiceCodaRifiutiAttivo].salvato = true;
+        renderCodaRifiuti();
+        const prossimo = codaRifiutiEstratti.findIndex(item => !item.salvato);
+        if (prossimo !== -1) { selezionaDaCodaRifiuti(prossimo); return; }
+      }
+      chiudiAnteprimaRifiuto();
+    }
+
+    function eliminaRecordRifiuto(uid) {
+      mostraConferma("Elimina RdP Rifiuto", "Vuoi eliminare questo rapporto di prova dal registro rifiuti?", () => {
+        archivioRifiuti = archivioRifiuti.filter(r => r.uid !== uid);
+        salvaRifiutiSuLocalStorage();
+        aggiornaUIRifiuti();
+        mostraToast("Record rifiuto eliminato.", "info");
+      });
+    }
+
+    function aggiornaUIRifiuti() {
+      document.getElementById("badge-count-rifiuti").innerText = archivioRifiuti.length;
+      document.getElementById("kpi-rif-totale").innerText = archivioRifiuti.length;
+      const pericCount = archivioRifiuti.filter(r => (r.pericolosita && r.pericolosita.startsWith("Pericoloso")) || (r.cer && r.cer.includes("*"))).length;
+      document.getElementById("kpi-rif-per").innerText = pericCount;
+      document.getElementById("kpi-rif-nonper").innerText = archivioRifiuti.length - pericCount;
+      renderTabellaRifiuti();
+    }
+
+    function renderTabellaRifiuti() {
+      const tbody = document.getElementById("rifiuti-table-tbody");
+      const testo = (document.getElementById("filtroTestoRifiuti")?.value || "").toLowerCase();
+      const pericFiltro = document.getElementById("filtroPericRifiuti")?.value || "ALL";
+
+      const filtrati = archivioRifiuti.filter(r => {
+        const blob = `${r.prog} ${r.cer} ${r.certificato} ${r.cantiere} ${r.descrizione} ${r.cdc}`.toLowerCase();
+        const matchTesto = blob.includes(testo);
+        const isPer = (r.pericolosita && r.pericolosita.startsWith("Pericoloso")) || (r.cer && r.cer.includes("*"));
+        let matchPer = true;
+        if (pericFiltro === "PER") matchPer = isPer;
+        else if (pericFiltro === "NON_PER") matchPer = !isPer;
+        return matchTesto && matchPer;
+      });
+
+      tbody.innerHTML = "";
+      if (filtrati.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500">Nessun RdP Rifiuto trovato. Trascina un PDF sopra oppure clicca su "Nuovo Rifiuto Manuale".</td></tr>`;
+        return;
+      }
+
+      filtrati.forEach(r => {
+        const isPer = (r.pericolosita && r.pericolosita.startsWith("Pericoloso")) || (r.cer && r.cer.includes("*"));
+        const badgePer = isPer
+          ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/15 text-amber-400 border border-amber-500/30">${r.pericolosita || "Pericoloso"}</span>`
+          : `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">${r.pericolosita || "Non Pericoloso"}</span>`;
+
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-800/50 transition";
+        tr.innerHTML = `
+          <td class="p-3 font-black text-rose-400">${r.prog}</td>
+          <td class="p-3 text-slate-300">${r.data_prelievo || "-"}</td>
+          <td class="p-3 text-center"><span class="px-2.5 py-1 rounded-lg bg-rose-950/60 border border-rose-500/30 text-rose-300 font-mono font-black">${r.cer}</span></td>
+          <td class="p-3">${badgePer}</td>
+          <td class="p-3"><div class="font-bold text-white">${r.cantiere || "-"}</div><div class="text-[11px] text-slate-300">${r.descrizione || "-"}</div></td>
+          <td class="p-3"><div class="font-bold text-sky-400">${r.certificato}</div><div class="text-[10px] text-slate-400">${r.laboratorio || ""} • Em. ${r.data_emissione || "-"}</div></td>
+          <td class="p-3"><div class="font-bold text-emerald-300">${r.ammissibilita || "-"}</div><div class="text-[10px] text-slate-400">${r.parametri_critici || ""}</div></td>
+          <td class="p-3 text-center"><span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-black" title="${r.autore || ''}">${r.autoreIniziali || "LB"}</span></td>
+          <td class="p-3 text-center">
+            <div class="inline-flex items-center gap-1.5">
+              <button onclick="modificaRecordRifiuto('${r.uid}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-sky-500/25 text-sky-400 cursor-pointer" title="Modifica"><i class="fa-solid fa-pen"></i></button>
+              <button onclick="eliminaRecordRifiuto('${r.uid}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/25 text-rose-400 cursor-pointer" title="Elimina"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function esportaRegistroRifiutiExcel() {
+      if (archivioRifiuti.length === 0) {
+        mostraToast("Nessun record rifiuti da esportare.", "error");
+        return;
+      }
+      const wb = XLSX.utils.book_new();
+      const rows = archivioRifiuti.map(r => ({
+        "Prog. Rifiuto": Number(r.prog) || r.prog,
+        "Data Prelievo": r.data_prelievo || "",
+        "Codice EER / CER": r.cer || "",
+        "Classificazione / Pericolosità": r.pericolosita || "",
+        "WBS / Cantiere": r.cantiere || "",
+        "Descrizione Rifiuto": r.descrizione || "",
+        "Catena di Custodia": r.cdc || "",
+        "Laboratorio": r.laboratorio || "",
+        "Certificato n°": r.certificato || "",
+        "Data Emissione": r.data_emissione || "",
+        "Ammissibilità / Destinazione": r.ammissibilita || "",
+        "Parametri Critici / Eluato": r.parametri_critici || "",
+        "Note": r.note || "",
+        "Operatore": r.autore || ""
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb, ws, "Registro_RdP_Rifiuti");
+      XLSX.writeFile(wb, "Registro_RdP_Rifiuti_TerzoValico.xlsx");
+      mostraToast("File Excel Registro Rifiuti esportato!", "success");
+    }
+
+    // =========================================================================
+    // NOTIFICHE TOAST & MODALE DI CONFERMA
+    // =========================================================================
     function mostraToast(messaggio, tipo = "info") {
       const container = document.getElementById("toast-container");
       const toast = document.createElement("div");
-      const stili = { success: "bg-emerald-950 text-emerald-200", error: "bg-rose-950 text-rose-200", info: "bg-slate-900 text-sky-200" };
-      toast.className = `border rounded-xl px-4 py-3 shadow-2xl text-xs font-semibold flex items-center gap-2.5 ${stili[tipo] || stili.info}`;
-      toast.innerHTML = `<span>${messaggio}</span>`;
+      const stili = {
+        success: "bg-emerald-950/95 border-emerald-500/50 text-emerald-200",
+        error: "bg-rose-950/95 border-rose-500/50 text-rose-200",
+        info: "bg-slate-900/95 border-sky-500/50 text-sky-200"
+      };
+      const icone = {
+        success: "fa-circle-check text-emerald-400",
+        error: "fa-circle-exclamation text-rose-400",
+        info: "fa-circle-info text-sky-400"
+      };
+      toast.className = `pointer-events-auto border rounded-xl px-4 py-3 shadow-2xl text-xs font-semibold flex items-center gap-2.5 backdrop-blur-md transition-all duration-300 ${stili[tipo] || stili.info}`;
+      toast.innerHTML = `<i class="fa-solid ${icone[tipo] || icone.info} text-sm"></i><span>${messaggio}</span>`;
       container.appendChild(toast);
-      setTimeout(() => toast.remove(), 3500);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(8px)";
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
     }
 
     function mostraConferma(titolo, messaggio, onConfirm) {
