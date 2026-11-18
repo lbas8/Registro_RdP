@@ -667,7 +667,7 @@
 
       <!-- #####################################################################
            MACRO-SEZIONE B: REGISTRO RDP RIFIUTI (SEPARATO E STRINGATO)
-           ##################################################################### -->
+           ################################################################     -->
       <div id="sezione-rifiuti-wrapper" class="hidden space-y-6">
 
         <!-- KPI E AZIONI EXCEL RIFIUTI -->
@@ -887,7 +887,7 @@
 
   <!-- =====================================================================
        MOTORE JAVASCRIPT COMPLETO E DEFINITIVO (TERRE + RIFIUTI)
-       ===================================================================== -->
+       ================================================================     -->
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
@@ -1000,6 +1000,7 @@
       { col: "EV", key: "pcb", excelHeader: "Policlorobifenili (PCB)", cat: "Altro", um: "mg/kg ss", colA: "0,06", colB: "5", aliases: ["Policlorobifenili (PCB)", "PCB"] },
       { col: "EW", key: "idrocarburi_leggeri", excelHeader: "Idrocarburi leggeri C<12", cat: "Idrocarburi", um: "mg/kg ss", colA: "10", colB: "250", aliases: ["Idrocarburi leggeri C<12", "Idrocarburi leggeri C<=12", "Idrocarburi C<12", "Idrocarburi leggeri"] },
       { col: "EX", key: "idrocarburi_pesanti", excelHeader: "Idrocarburi pesanti C>12", cat: "Idrocarburi", um: "mg/kg ss", colA: "50", colB: "750", aliases: ["Idrocarburi pesanti C>12", "Idrocarburi pesanti C12-C40", "Idrocarburi C12-C40", "Idrocarburi C10-C40", "Idrocarburi pesanti"] }
+    ];
 
     const STORAGE_KEY_RECORDS = "tv_registro_rdp_154_records_v1";
     const STORAGE_KEY_RIFIUTI = "tv_registro_rdp_rifiuti_v1";
@@ -1242,9 +1243,9 @@
     }
 
     // =========================================================================
-    // ESTRAZIONE SPAZIALE PDF.JS CONDIVISA
+    // ESTRAZIONE SPAZIALE PDF.JS CONDIVISA & CORRETTA
     // =========================================================================
-function estraiTestoSpazialePDF(file) {
+    function estraiTestoSpazialePDF(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = async function() {
@@ -1281,6 +1282,16 @@ function estraiTestoSpazialePDF(file) {
       });
     }
 
+    function formattaValoreItaliano(val) {
+      if (!val) return "";
+      let s = String(val).trim();
+      if (/^n\.?r\.?$/i.test(s)) return "n.r.";
+      if (/^[<>]?\s*\d+[.,]\d+$/.test(s)) {
+        return s.replace(/\s+/g, "").replace(".", ",");
+      }
+      return s;
+    }
+
     function trovaValoreAnalitaInTesto(testo, analitaObj) {
       const righe = testo.split("\n");
       let rigaTrovataIdx = -1;
@@ -1303,7 +1314,6 @@ function estraiTestoSpazialePDF(file) {
 
       if (rigaTrovataIdx === -1) return "";
 
-      // Prende la riga dell'analita (dopo il nome) + eventuale riga subito sopra/sotto se il valore è sfalsato
       const rigaCorrente = righe[rigaTrovataIdx];
       const posAlias = rigaCorrente.toLowerCase().indexOf(matchedAlias.toLowerCase());
       const dopoAlias = rigaCorrente.substring(posAlias + matchedAlias.length);
@@ -1353,6 +1363,7 @@ function estraiTestoSpazialePDF(file) {
 
       return "";
     }
+
     // =========================================================================
     // MOTORE SEZIONE 1: TERRE E ROCCE DA SCAVO (154 COLONNE)
     // =========================================================================
@@ -1397,41 +1408,6 @@ function estraiTestoSpazialePDF(file) {
         mostraToast(`Estrazione completata per ${codaPdfEstratti.length} file PDF!`, "success");
       }
       document.getElementById("fileInputPdf").value = "";
-    }
-
-    function formattaValoreItaliano(val) {
-      if (!val) return "";
-      let s = String(val).trim();
-      if (/^n\.?r\.?$/i.test(s)) return "n.r.";
-      if (/^[<>]?\s*\d+[.,]\d+$/.test(s)) {
-        return s.replace(/\s+/g, "").replace(".", ",");
-      }
-      return s;
-    }
-
-    function trovaValoreAnalitaInTesto(testo, analitaObj) {
-      let idx = -1;
-      let matchedAlias = "";
-      for (const alias of analitaObj.aliases) {
-        const regex = new RegExp(alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
-        const m = regex.exec(testo);
-        if (m) { idx = m.index; matchedAlias = m[0]; break; }
-      }
-      if (idx === -1) return "";
-      const finestra = testo.substring(idx + matchedAlias.length, idx + matchedAlias.length + 140);
-      const finestraLower = finestra.toLowerCase();
-      const posNr = finestraLower.search(/\bn\.?r\.?\b/);
-      const posNum = finestraLower.search(/[<>]?\s*\d+[.,]\d+|\b\d{1,3}\b/);
-      if (posNr !== -1 && (posNum === -1 || posNr < posNum)) return "n.r.";
-      const matches = finestra.match(/([<>]\s*\d+(?:[.,]\d+)?|\d+[.,]\d+|\b\d{1,3}\b)/g);
-      if (matches) {
-        for (const m of matches) {
-          const clean = m.replace(/\s+/g, "");
-          if (clean === "105" || clean === "152" || clean === "161") continue;
-          return formattaValoreItaliano(clean);
-        }
-      }
-      return "";
     }
 
     function parseTestoCertificatoPDF(testo, nomeFile, progAssegnato) {
@@ -2035,7 +2011,6 @@ function estraiTestoSpazialePDF(file) {
       const dataPrelievo = (matchDataPrel ? matchDataPrel[1] : (tutteDate[0] || new Date().toLocaleDateString("it-IT"))).replace(/-/g, "/");
       const dataEmissione = (matchDataEmiss ? matchDataEmiss[1] : (tutteDate[tutteDate.length - 1] || dataPrelievo)).replace(/-/g, "/");
 
-      // Estrazione Codice EER / CER (es. 17 05 04, 17 05 03*, 170504, 16 10 02, 19 08 14, ecc.)
       const matchCer = testo.match(/(?:EER|CER)[:\s]*(\d{2}\s*\d{2}\s*\d{2}\s*\*?)/i) || testo.match(/\b((?:16|17|19|20)\s*\d{2}\s*\d{2}\s*\*?)\b/);
       let cer = matchCer ? matchCer[1].replace(/\s+/g, " ").trim() : "17 05 04";
       if (/^\d{6}\*?$/.test(cer)) {
