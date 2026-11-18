@@ -576,21 +576,55 @@ function scaricaPdfSalvato(uid) {
 }
 
 function esportaRegistroExcelCompleto() {
-  if (archivioRecords.length === 0) { mostraToast("Nessun record.", "error"); return; }
-  const wb = XLSX.utils.book_new();
+  if (archivioRecords.length === 0) { 
+    mostraToast("Nessun record da esportare.", "error"); 
+    return; 
+  }
+
+  // Costruisce l'intestazione delle 154 colonne
   const header = new Array(154).fill("");
-  header[1] = "Prog."; header[3] = "Data"; header[20] = "Certificato"; header[36] = "Sottoprodotto";
-  ANALITI_97.forEach((an, i) => { header[57 + i] = an.excelHeader; });
+  header[1] = "Prog."; 
+  header[3] = "Data"; 
+  header[20] = "Certificato"; 
+  header[36] = "Sottoprodotto";
+  
+  ANALITI_97.forEach((an, i) => { 
+    header[57 + i] = an.excelHeader; 
+  });
 
   const aoa = [new Array(154).fill(""), header];
+
+  // Riempie le righe con i dati presenti nell'archivio
   archivioRecords.forEach(r => {
     const row = new Array(154).fill("");
-    row[1] = r.prog; row[3] = r.data_prelievo; row[20] = r.certificato_num; row[36] = r.sottoprodotto;
-    ANALITI_97.forEach((an, i) => { row[57 + i] = r.analiti?.[an.key] || ""; });
+    row[1] = r.prog; 
+    row[3] = r.data_prelievo; 
+    row[20] = r.certificato_num; 
+    row[36] = r.sottoprodotto;
+    
+    ANALITI_97.forEach((an, i) => { 
+      row[57 + i] = r.analiti?.[an.key] || ""; 
+    });
+    
     aoa.push(row);
   });
-  XLSX.writeFile(XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), "Foglio1"), "Registro_RdP_Terre.xlsx");
-  mostraToast("Export completato!", "success");
+
+  try {
+    // Crea il foglio di lavoro dai dati in matrice (Array of Arrays)
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    
+    // Aggiunge correttamente il foglio al Workbook
+    XLSX.utils.book_append_sheet(wb, ws, "Registro_Terre");
+    
+    // Esegue il download forzato del file Excel nel browser
+    XLSX.writeFile(wb, "Registro_RdP_Terre.xlsx");
+    
+    mostraToast("Export Excel completato con successo!", "success");
+  } catch (err) {
+    console.error("Errore durante l'export Excel:", err);
+    mostraToast("Errore durante la generazione del file Excel.", "error");
+  }
 }
 
 function caricaTemplateExcelEsistente(file) {
