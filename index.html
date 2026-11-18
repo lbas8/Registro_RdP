@@ -998,9 +998,8 @@
       { col: "ET", key: "endrin", excelHeader: "Endrin", cat: "Altro", um: "mg/kg ss", colA: "0,01", colB: "2", aliases: ["Endrin"] },
       { col: "EU", key: "pcdd_pcdf", excelHeader: "Sommatoria PCDD, PCDF (conversione T.E.)", cat: "Altro", um: "ng/kg ss", colA: "10", colB: "100", aliases: ["Sommatoria PCDD, PCDF"] },
       { col: "EV", key: "pcb", excelHeader: "Policlorobifenili (PCB)", cat: "Altro", um: "mg/kg ss", colA: "0,06", colB: "5", aliases: ["Policlorobifenili (PCB)", "PCB"] },
-      { col: "EW", key: "idrocarburi_leggeri", excelHeader: "Idrocarburi leggeri C<12", cat: "Idrocarburi", um: "mg/kg ss", colA: "10", colB: "250", aliases: ["Idrocarburi leggeri C<12"] },
-      { col: "EX", key: "idrocarburi_pesanti", excelHeader: "Idrocarburi pesanti C>12", cat: "Idrocarburi", um: "mg/kg ss", colA: "50", colB: "750", aliases: ["Idrocarburi pesanti C>12"] }
-    ];
+      { col: "EW", key: "idrocarburi_leggeri", excelHeader: "Idrocarburi leggeri C<12", cat: "Idrocarburi", um: "mg/kg ss", colA: "10", colB: "250", aliases: ["Idrocarburi leggeri C<12", "Idrocarburi leggeri C<=12", "Idrocarburi C<12", "Idrocarburi leggeri"] },
+      { col: "EX", key: "idrocarburi_pesanti", excelHeader: "Idrocarburi pesanti C>12", cat: "Idrocarburi", um: "mg/kg ss", colA: "50", colB: "750", aliases: ["Idrocarburi pesanti C>12", "Idrocarburi pesanti C12-C40", "Idrocarburi C12-C40", "Idrocarburi C10-C40", "Idrocarburi pesanti"] }
 
     const STORAGE_KEY_RECORDS = "tv_registro_rdp_154_records_v1";
     const STORAGE_KEY_RIFIUTI = "tv_registro_rdp_rifiuti_v1";
@@ -1245,7 +1244,7 @@
     // =========================================================================
     // ESTRAZIONE SPAZIALE PDF.JS CONDIVISA
     // =========================================================================
-    function estraiTestoSpazialePDF(file) {
+function estraiTestoSpazialePDF(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = async function() {
@@ -1256,15 +1255,21 @@
             for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
               const page = await pdf.getPage(pageNum);
               const textContent = await page.getTextContent();
+              // Raggruppamento con tolleranza verticale di 9pt per tenere allineati analita, "< 0.10" e "48.9 ± 14.7"
               const righeMappa = {};
               textContent.items.forEach(item => {
-                const y = Math.round(item.transform[5] / 6) * 6;
+                const y = Math.round(item.transform[5] / 9) * 9;
                 if (!righeMappa[y]) righeMappa[y] = [];
                 righeMappa[y].push({ x: item.transform[4], str: item.str });
               });
               const yKeys = Object.keys(righeMappa).sort((a, b) => Number(b) - Number(a));
               yKeys.forEach(y => {
-                const riga = righeMappa[y].sort((a, b) => a.x - b.x).map(e => e.str).join(" ").replace(/\s+/g, " ").trim();
+                const riga = righeMappa[y]
+                  .sort((a, b) => a.x - b.x)
+                  .map(e => e.str)
+                  .join(" ")
+                  .replace(/\s+/g, " ")
+                  .trim();
                 if (riga) testoCompleto += riga + "\n";
               });
             }
@@ -1276,6 +1281,78 @@
       });
     }
 
+    function trovaValoreAnalitaInTesto(testo, analitaObj) {
+      const righe = testo.split("\n");
+      let rigaTrovataIdx = -1;
+      let matchedAlias = "";
+
+      for (let i = 0; i < righe.length; i++) {
+        for (const alias of analitaObj.aliases) {
+          // Evita che "Cromo" faccia match su "Cromo (VI)"
+          if (analitaObj.key === "cromo" && /cromo\s*\(?vi\)?/i.test(righe[i])) continue;
+          const regex = new RegExp(alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+          const m = regex.exec(righe[i]);
+          if (m) {
+            rigaTrovataIdx = i;
+            matchedAlias = m[0];
+            break;
+          }
+        }
+        if (rigaTrovataIdx !== -1) break;
+      }
+
+      if (rigaTrovataIdx === -1) return "";
+
+      // Prende la riga dell'analita (dopo il nome) + eventuale riga subito sopra/sotto se il valore è sfalsato
+      const rigaCorrente = righe[rigaTrovataIdx];
+      const posAlias = rigaCorrente.toLowerCase().indexOf(matchedAlias.toLowerCase());
+      const dopoAlias = rigaCorrente.substring(posAlias + matchedAlias.length);
+      const rigaSucc = righe[rigaTrovataIdx + 1] || "";
+      const rigaPrec = righe[rigaTrovataIdx - 1] || "";
+
+      // Pulizia dei codici norma UNI / EN / ISO / EPA / CNR per non pescare numeri dai metodi
+      const pulisciMetodi = (str) => str
+        .replace(/(?:UNI|EN|ISO|EPA|CNR|IRSA|DM|D\.Lgs\.?)\s*[A-Z0-9\-\/:]+/gi, " ")
+        .replace(/C12-C40|C10-C40|C<12|C>12/gi, " ");
+
+      const bloccoRicerca = pulisciMetodi(dopoAlias + " | " + rigaSucc + " | " + rigaPrec);
+
+      // 1. Controllo "n.r." (non rilevabile)
+      if (/\bn\.?r\.?\b/i.test(pulisciMetodi(dopoAlias))) {
+        return "n.r.";
+      }
+
+      // 2. Priorità assoluta a valori con "<" o ">" (es. "< 0.10", "< 0.500")
+      const matchMinore = bloccoRicerca.match(/([<>]\s*\d+(?:[.,]\d+)?)/);
+      if (matchMinore) {
+        return formattaValoreItaliano(matchMinore[1]);
+      }
+
+      // 3. Priorità a valori con incertezza "±" (es. "48.9 ± 14.7", "356 ± 107")
+      const matchIncertezza = bloccoRicerca.match(/(\d+(?:[.,]\d+)?)\s*±\s*\d+(?:[.,]\d+)?/);
+      if (matchIncertezza) {
+        return formattaValoreItaliano(matchIncertezza[1]);
+      }
+
+      // 4. Fallback: primo numero decimale sulla riga stessa (es. "48.9", "0.10")
+      const matchDecimale = pulisciMetodi(dopoAlias).match(/\b(\d+[.,]\d+)\b/);
+      if (matchDecimale) {
+        return formattaValoreItaliano(matchDecimale[1]);
+      }
+
+      // 5. Fallback finale: numero intero sulla riga purché NON sia uguale ai limiti Col. A / Col. B
+      const limA = analitaObj.colA.replace(",", ".");
+      const limB = analitaObj.colB.replace(",", ".");
+      const interi = pulisciMetodi(dopoAlias).match(/\b(\d{1,4})\b/g);
+      if (interi) {
+        for (const num of interi) {
+          if (num === limA || num === limB || num === "105" || num === "152" || num === "161") continue;
+          return formattaValoreItaliano(num);
+        }
+      }
+
+      return "";
+    }
     // =========================================================================
     // MOTORE SEZIONE 1: TERRE E ROCCE DA SCAVO (154 COLONNE)
     // =========================================================================
