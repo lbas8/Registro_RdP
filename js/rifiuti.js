@@ -58,16 +58,24 @@ async function gestisciFileRifiutiSelezionati(files) {
 
   for (let i = 0; i < pdfs.length; i++) {
     try {
-      const testo = await estraiTestoSpazialePDF(pdfs[i]);
+      const file = pdfs[i];
+      const testo = await estraiTestoSpazialePDF(file);
       const matchCer = testo.match(/(?:EER|CER)[:\s]*(\d{2}\s*\d{2}\s*\d{2}\s*\*?)/i) || ["", "17 05 04"];
-      const matchCert = testo.match(/Certificato\s+n[°º.]?\s*([A-Z0-9\-\/]+)/i) || ["", pdfs[i].name.replace(/\.pdf$/i, "")];
+      const matchCert = testo.match(/Certificato\s+n[°º.]?\s*([A-Z0-9\-\/]+)/i) || ["", file.name.replace(/\.pdf$/i, "")];
+
+      const base64Data = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
 
       const rec = {
         uid: "", prog: progRif + i, data_prelievo: new Date().toLocaleDateString("it-IT"),
         cer: matchCer[1].trim(), pericolosita: matchCer[1].includes("*") ? "Pericoloso" : "Non Pericoloso",
-        certificato: matchCert[1].trim(), cantiere: "Terzo Valico"
+        certificato: matchCert[1].trim(), cantiere: "Terzo Valico",
+        pdfBase64: base64Data
       };
-      codaRifiutiEstratti.push({ fileName: pdfs[i].name, record: rec });
+      codaRifiutiEstratti.push({ fileName: file.name, record: rec });
     } catch (err) { console.error(err); }
   }
 
