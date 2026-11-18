@@ -194,9 +194,19 @@ async function gestisciFileSelezionati(fileList) {
 
   for (let i = 0; i < pdfFiles.length; i++) {
     try {
-      const testo = await estraiTestoSpazialePDF(pdfFiles[i]);
-      const rec = parseTestoCertificatoPDF(testo, pdfFiles[i].name, progCorrente + i);
-      codaPdfEstratti.push({ fileName: pdfFiles[i].name, record: rec });
+      const file = pdfFiles[i];
+      const testo = await estraiTestoSpazialePDF(file);
+      
+      // Converte il file in Base64 per poterlo salvare nel localStorage
+      const base64Data = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
+
+      const rec = parseTestoCertificatoPDF(testo, file.name, progCorrente + i);
+      rec.pdfBase64 = base64Data; // Salva il PDF nel record
+      codaPdfEstratti.push({ fileName: file.name, record: rec });
     } catch (err) { console.error(err); }
   }
 
