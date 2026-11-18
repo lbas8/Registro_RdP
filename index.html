@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro Rapporti di Prova (RdP) — Ufficio Ambiente Terzo Valico</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #090d16; color: #f8fafc; }
+    .dropzone { border: 2px dashed rgba(56, 189, 248, 0.35); transition: all 0.25s ease; }
+    .dropzone.dragover { background-color: rgba(56, 189, 248, 0.12); border-color: #38bdf8; transform: scale(1.005); }
+    .dropzone-rifiuti { border: 2px dashed rgba(244, 63, 94, 0.35); transition: all 0.25s ease; }
+    .dropzone-rifiuti.dragover { background-color: rgba(244, 63, 94, 0.12); border-color: #fb7185; transform: scale(1.005); }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-md pointer-events-none"></div>
+
+  <!-- MODALE DI CONFERMA -->
+  <div id="confirm-modal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3 text-amber-400">
+        <div class="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h3 id="confirm-title" class="text-base font-black text-white uppercase tracking-wide">Conferma Operazione</h3>
+      </div>
+      <p id="confirm-message" class="text-xs text-slate-300 leading-relaxed"></p>
+      <div class="flex justify-end gap-3 pt-2">
+        <button id="confirm-cancel-btn" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer">Annulla</button>
+        <button id="confirm-ok-btn" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition cursor-pointer">Conferma</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCHERMATA DI LOGIN -->
+  <div id="login-screen" class="fixed inset-0 z-40 bg-[#070a12] flex items-center justify-center p-4 overflow-y-auto">
+    <div class="w-full max-w-md bg-slate-900/95 border border-slate-800 rounded-3xl p-7 sm:p-8 shadow-2xl space-y-6 my-auto">
+      <div class="text-center space-y-2">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-400 text-2xl mb-1 shadow-lg">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="text-[10px] font-black tracking-widest uppercase text-sky-400">Consorzio COCIV • Terzo Valico dei Giovi</div>
+        <h1 class="text-xl font-black text-white uppercase tracking-tight">Portale Registro RdP</h1>
+        <p class="text-xs text-slate-400">Ufficio Ambiente — Estrazione Automatica & Tabulazione Excel</p>
+      </div>
+
+      <form id="login-form" onsubmit="eseguiLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Username Operatore</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 text-xs"><i class="fa-solid fa-user"></i></span>
+            <input type="text" id="login-username" required autocomplete="username" oninput="controllaUsernameLeone(this.value)" placeholder="Inserisci username..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white outline-none focus:border-sky-400 transition">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Password</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 text-xs"><i class="fa-solid fa-lock"></i></span>
+            <input type="password" id="login-password" required autocomplete="current-password" oninput="controllaPasswordLeone()" placeholder="••••••••••••" class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white outline-none focus:border-sky-400 transition">
+            <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 text-xs cursor-pointer">
+              <i id="eye-icon" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="login-error" class="hidden bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs rounded-xl px-3.5 py-2.5 flex items-center gap-2">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span>Credenziali non valide. Verifica username e password.</span>
+        </div>
+
+        <button type="submit" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-black py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-sky-500/20 transition cursor-pointer flex items-center justify-center gap-2">
+          <i class="fa-solid fa-right-to-bracket"></i> Accedi al Registro RdP
+        </button>
+      </form>
+
+      <div id="admin-credenziali-wrapper" class="hidden border-t border-slate-800 pt-4">
+        <button type="button" onclick="toggleCredenzialiBox()" class="w-full flex items-center justify-between text-[11px] font-bold text-sky-400 hover:text-sky-300 transition cursor-pointer bg-sky-500/10 border border-sky-500/30 px-3 py-2 rounded-xl">
+          <span class="flex items-center gap-1.5"><i class="fa-solid fa-key text-sky-400"></i> Area Admin (Leone): Credenziali Predefinite</span>
+          <i id="cred-chevron" class="fa-solid fa-chevron-down transition-transform"></i>
+        </button>
+        <div id="credenziali-box" class="hidden mt-3 bg-slate-950/90 border border-slate-800 rounded-xl p-3 space-y-2 text-[11px]">
+          <p class="text-slate-400 text-[10px]">Clicca su un profilo per compilare automaticamente il login:</p>
+          <div id="lista-utenti-demo" class="grid grid-cols-1 gap-1.5"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICAZIONE PRINCIPALE -->
+  <div id="app-wrapper" class="hidden flex-col min-h-screen justify-between">
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30">
+      <div class="max-w-[1600px] mx-auto px-4 sm:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center text-white font-black text-base shadow-lg">TV</div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm sm:text-base font-black uppercase tracking-wide text-white">Registro Rapporti di Prova (RdP)</span>
+              <span class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-sky-500/10 text-sky-400 border border-sky-500/30">TERRE 154 COL. + RIFIUTI</span>
+            </div>
+            <p class="text-[11px] text-slate-400">Ufficio Ambiente • Gestione Terre e Rocce da Scavo & Registro Rifiuti</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 sm:gap-4">
+          <div class="flex items-center gap-2.5 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5">
+            <div id="user-avatar" class="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-500/40 text-sky-400 font-black text-xs flex items-center justify-center">LB</div>
+            <div class="hidden md:block leading-tight">
+              <div id="user-fullname" class="text-xs font-bold text-white">Leone Bastiancich</div>
+              <div id="user-role" class="text-[10px] text-slate-400">Addetto Ambiente</div>
+            </div>
+          </div>
+          <button onclick="eseguiLogout()" class="bg-slate-800 hover:bg-rose-950/60 hover:text-rose-300 border border-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+            <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline">Esci</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-[1600px] mx-auto w-full px-4 sm:px-8 pt-6 pb-12 flex-grow space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-2xl p-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="cambiaSezionePrincipale('terre')" id="macro-btn-terre" class="px-4 py-2.5 rounded-xl bg-sky-500 text-slate-950 text-xs font-black uppercase tracking-wider shadow-lg shadow-sky-500/20 transition cursor-pointer flex items-center gap-2">
+            <i class="fa-solid fa-mound"></i> Sezione 1: Terre e Rocce da Scavo (154 Colonne)
+          </button>
+          <button onclick="cambiaSezionePrincipale('rifiuti')" id="macro-btn-rifiuti" class="px-4 py-2.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 text-slate-300 text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center gap-2">
+            <i class="fa-solid fa-recycle text-rose-400"></i> Sezione 2: Registro RdP Rifiuti
+            <span id="badge-count-rifiuti" class="px-1.5 py-0.5 rounded-full text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/30">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SEZIONE TERRE -->
+      <div id="sezione-terre-wrapper" class="space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+          <div class="lg:col-span-5 grid grid-cols-4 gap-2.5">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between">
+              <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Totale RdP</span>
+              <div class="flex items-baseline justify-between mt-1"><span id="kpi-totale" class="text-xl font-black text-white">0</span><i class="fa-solid fa-file-lines text-sky-400 text-xs"></i></div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between">
+              <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">1/A (Verde)</span>
+              <div class="flex items-baseline justify-between mt-1"><span id="kpi-1a" class="text-xl font-black text-emerald-400">0</span><i class="fa-solid fa-circle-check text-emerald-400 text-xs"></i></div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between">
+              <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">1/B (Rosso)</span>
+              <div class="flex items-baseline justify-between mt-1"><span id="kpi-1b" class="text-xl font-black text-rose-400">0</span><i class="fa-solid fa-circle-exclamation text-rose-400 text-xs"></i></div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between">
+              <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Ultimo Prog.</span>
+              <div class="flex items-baseline justify-between mt-1"><span id="kpi-prog" class="text-lg font-black text-amber-400">-</span><i class="fa-solid fa-hashtag text-amber-400 text-xs"></i></div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="space-y-1">
+              <div class="text-xs font-black text-white uppercase tracking-wide flex items-center gap-2">
+                <i class="fa-solid fa-file-excel text-emerald-400"></i> Integrazione Registro Excel Terre (154 Colonne)
+              </div>
+              <p id="template-status" class="text-[11px] text-slate-400">Nessun file Excel base caricato.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+              <input type="file" id="inputExcelBase" accept=".xlsx,.xls" class="hidden" onchange="caricaTemplateExcelEsistente(this.files[0])">
+              <button onclick="document.getElementById('inputExcelBase').click()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer">
+                <i class="fa-solid fa-folder-open text-amber-400"></i> Carica Excel Base
+              </button>
+              <button onclick="esportaRegistroExcelCompleto()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 shadow-lg transition cursor-pointer">
+                <i class="fa-solid fa-download"></i> Esporta Terre (.xlsx)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DROPZONE TERRE -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <h2 class="text-xs font-black text-sky-400 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Acquisizione Automatica Rapporti di Prova Terre (.PDF)
+            </h2>
+            <span class="text-[11px] text-slate-400">Supporta caricamento singolo o multiplo</span>
+          </div>
+
+          <div id="dropzone" class="dropzone rounded-xl p-6 sm:p-8 text-center cursor-pointer bg-slate-950/60 flex flex-col items-center justify-center gap-2.5">
+            <div class="w-12 h-12 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 flex items-center justify-center text-xl shadow">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <div>
+              <p class="text-xs sm:text-sm font-bold text-white">Trascina qui uno o più file PDF dei Rapporti di Prova Terre oppure clicca</p>
+              <p class="text-[11px] text-slate-400 mt-1">Estrazione automatica WBS, Cantiere, Sito, CdC e 97 analiti</p>
+            </div>
+            <input type="file" id="fileInputPdf" accept=".pdf" multiple class="hidden" onchange="gestisciFileSelezionati(this.files)">
+          </div>
+
+          <div id="coda-pdf-container" class="hidden mt-4 bg-slate-950 border border-slate-800 rounded-xl p-3.5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[11px] font-bold text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-layer-group"></i> Coda PDF (<span id="coda-count">0</span>)
+              </span>
+              <button onclick="svuotaCodaPDF()" class="text-[11px] text-slate-400 hover:text-rose-400 font-bold cursor-pointer">Chiudi coda</button>
+            </div>
+            <div id="coda-pdf-list" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <!-- SCHEDA DI VERIFICA TERRE -->
+          <div id="form-estratto-container" class="hidden mt-6 border border-sky-500/40 bg-slate-950/90 rounded-2xl p-5 sm:p-6 space-y-6 shadow-2xl">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div>
+                <h3 class="text-sm font-black text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                  <i class="fa-solid fa-check-to-slot"></i> Verifica & Completa Dati Estratti (Registro 154 Colonne)
+                </h3>
+                <p id="nome-file-corrente" class="text-[11px] text-slate-400 mt-0.5">File: -</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="hidden" id="edit_record_uid" value="">
+                <button onclick="chiudiAnteprimaPDF()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer">Annulla</button>
+                <button onclick="salvaRecordRdP()" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-black transition shadow-lg cursor-pointer flex items-center gap-2">
+                  <i class="fa-solid fa-floppy-disk"></i> Salva nel Registro Terre
+                </button>
+              </div>
+            </div>
+
+            <!-- CAMPI GENERALI TERRE -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 text-xs">
+              <div><label class="block text-[10px] font-bold text-slate-400 mb-1">Prog. n° (Col. B)</label><input type="number" id="f_prog" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-amber-300 font-black outline-none"></div>
+              <div><label class="block text-[10px] font-bold text-slate-400 mb-1">Data Prelievo (Col. D)</label><input type="text" id="f_data_prelievo" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none"></div>
+              <div><label class="block text-[10px] font-bold text-sky-400 mb-1">Prod. WBS (Col. F)</label><input type="text" id="f_prod_wbs" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none"></div>
+              <div><label class="block text-[10px] font-bold text-sky-400 mb-1">Prod. Cantiere (Col. G)</label><input type="text" id="f_prod_cantiere" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none"></div>
+              <div><label class="block text-[10px] font-bold text-sky-400 mb-1">Sito (Col. H)</label><input type="text" id="f_prod_sito" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none"></div>
+              <div><label class="block text-[10px] font-bold text-slate-400 mb-1">Punto (Col. M)</label><input type="text" id="f_punto_prelievo" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none"></div>
+              <div class="sm:col-span-2"><label class="block text-[10px] font-bold text-slate-400 mb-1">Denominazione (Col. N)</label><input type="text" id="f_denominazione" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none"></div>
+              <div><label class="block text-[10px] font-bold text-slate-400 mb-1">Laboratorio (Col. T)</label><input type="text" id="f_laboratorio" oninput="aggiornaAnnoLabCert()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white uppercase outline-none"></div>
+              <div><label class="block text-[10px] font-bold text-slate-400 mb-1">Certificato (Col. U)</label><input type="text" id="f_certificato_num" oninput="aggiornaAnnoLabCert()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-sky-300 font-bold outline-none"></div>
+              <div><label class="block text-[10px] font-bold text-slate-400 mb-1">Data Emiss. (Col. V)</label><input type="text" id="f_data_emissione" oninput="aggiornaAnnoLabCert()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none"></div>
+              <div><label class="block text-[10px] font-bold text-emerald-400 mb-1">Anno_Lab_Cert (Col. W)</label><input type="text" id="f_anno_lab_cert" readonly class="w-full bg-slate-900/60 border border-emerald-500/40 rounded-lg px-2.5 py-2 text-emerald-300 font-mono text-[11px] font-bold"></div>
+              <div>
+                <label class="block text-[10px] font-bold text-emerald-400 mb-1">Sottoprodotto (Col. AK)</label>
+                <select id="f_sottoprodotto" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white font-bold outline-none">
+                  <option value="1/A">1/A (Verde/Residenziale)</option>
+                  <option value="1/B">1/B (Industriale/Comm.)</option>
+                  <option value="">Non Sottoprodotto (Rifiuto)</option>
+                </select>
+              </div>
+              <div class="sm:col-span-3"><label class="block text-[10px] font-bold text-slate-400 mb-1">Note (Col. BA)</label><input type="text" id="f_note" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white outline-none"></div>
+            </div>
+
+            <!-- TABELLA 97 ANALITI IN PREVIEW -->
+            <div class="space-y-3 border-t border-slate-800 pt-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <h4 class="text-[11px] font-black text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                  <i class="fa-solid fa-flask"></i> Analiti Chimici Estratti — 97 Parametri (Colonne BF ➔ EX)
+                </h4>
+                <div class="flex items-center gap-2">
+                  <input type="text" id="filtro-analiti-preview" oninput="filtraAnalitiPreview()" placeholder="Cerca analita..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white outline-none">
+                  <select id="filtro-cat-preview" onchange="filtraAnalitiPreview()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none">
+                    <option value="ALL">Tutti</option>
+                    <option value="Metalli">Metalli</option>
+                    <option value="Idrocarburi">Idrocarburi</option>
+                    <option value="IPA">IPA</option>
+                    <option value="Alifatici">Alifatici</option>
+                    <option value="Aromatici">Aromatici</option>
+                    <option value="Altro">Altro</option>
+                  </select>
+                </div>
+              </div>
+              <div class="max-h-[360px] overflow-y-auto bg-slate-900 border border-slate-800 rounded-xl">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead class="sticky top-0 bg-slate-800 text-slate-300 z-10 border-b border-slate-700">
+                    <tr>
+                      <th class="p-2 w-14 text-center">Col.</th>
+                      <th class="p-2">Parametro</th>
+                      <th class="p-2 text-center w-20">U.M.</th>
+                      <th class="p-2 text-center w-36 text-sky-400">Valore Esatto</th>
+                      <th class="p-2 text-center w-24 text-emerald-400">Col. A</th>
+                      <th class="p-2 text-center w-24 text-rose-400">Col. B</th>
+                    </tr>
+                  </thead>
+                  <tbody id="preview-analiti-tbody" class="divide-y divide-slate-800"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2 border-t border-slate-800">
+              <button onclick="chiudiAnteprimaPDF()" class="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold cursor-pointer">Annulla</button>
+              <button onclick="salvaRecordRdP()" class="px-6 py-2.5 rounded-xl bg-sky-500 text-slate-950 text-xs font-black shadow-lg cursor-pointer flex items-center gap-2">
+                <i class="fa-solid fa-check"></i> Conferma e Salva
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TABS NAVIGAZIONE TERRE -->
+        <div class="flex border-b border-slate-800 gap-6 text-xs sm:text-sm font-bold overflow-x-auto">
+          <button onclick="cambiaVista('tabella')" id="btn-tabella" class="pb-3 border-b-2 border-sky-400 text-sky-400 flex items-center gap-2 cursor-pointer whitespace-nowrap"><i class="fa-solid fa-table-list"></i> Tab 1: Registro Generale</button>
+          <button onclick="cambiaVista('analiti')" id="btn-analiti" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 cursor-pointer whitespace-nowrap"><i class="fa-solid fa-vials text-emerald-400"></i> Tab 2: Matrice Analiti (97)</button>
+          <button onclick="cambiaVista('cartelle')" id="btn-cartelle" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 cursor-pointer whitespace-nowrap"><i class="fa-solid fa-folder-tree text-amber-400"></i> Tab 3: Vista Cartelle</button>
+        </div>
+
+        <!-- TAB 1: TABELLA TERRE -->
+        <div id="vista-tabella" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input type="text" id="filtroTesto" oninput="filtraTabellaRdP()" placeholder="Cerca Certificato, Denominazione..." class="bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none">
+            <select id="filtroQualifica" onchange="filtraTabellaRdP()" class="bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none">
+              <option value="">Tutte le Qualifiche</option>
+              <option value="1/A">Sottoprodotto 1/A</option>
+              <option value="1/B">Sottoprodotto 1/B</option>
+              <option value="RIFIUTO">Rifiuto</option>
+            </select>
+            <div class="flex justify-end">
+              <button onclick="apriNuovoRecordManuale()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-400 px-3.5 py-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5">
+                <i class="fa-solid fa-plus"></i> Nuovo Manuale
+              </button>
+            </div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-800/90 text-slate-300 border-b border-slate-700 text-[11px] uppercase">
+                    <th class="p-3">Prog.</th><th class="p-3">Data</th><th class="p-3">WBS / Cantiere</th><th class="p-3">Denominazione</th><th class="p-3">Certificato & Lab</th><th class="p-3">Anno_Lab_Cert</th><th class="p-3 text-center">Qualifica</th><th class="p-3 text-center">Azioni</th>
+                  </tr>
+                </thead>
+                <tbody id="rdp-table-tbody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: MATRICE ANALITI -->
+        <div id="vista-analiti" class="space-y-4 hidden">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 class="text-sm font-black text-emerald-400 uppercase tracking-wider"><i class="fa-solid fa-table-columns"></i> Matrice Chimica (97 Analiti)</h3>
+              <select id="filtro-matrice-cat" onchange="renderMatriceAnaliti()" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none">
+                <option value="ALL">Tutti</option>
+                <option value="VALORIZZATI">Solo valorizzati</option>
+              </select>
+            </div>
+            <div class="overflow-x-auto max-h-[500px]">
+              <table class="w-full text-left border-collapse text-[11px]" id="tabella-analiti-97">
+                <thead id="thead-analiti-97" class="sticky top-0 z-20"></thead>
+                <tbody id="tbody-analiti-97" class="divide-y divide-slate-800 text-slate-300"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: CARTELLE -->
+        <div id="vista-cartelle" class="space-y-4 hidden">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <h3 class="text-sm font-black text-white uppercase tracking-wider"><i class="fa-solid fa-folder-tree text-amber-400"></i> Vista Gerarchica</h3>
+            <div id="albero-cartelle-container" class="space-y-3"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEZIONE RIFIUTI -->
+      <div id="sezione-rifiuti-wrapper" class="hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+          <div class="lg:col-span-5 grid grid-cols-3 gap-3">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between"><span class="text-[10px] font-bold text-slate-400">Totale Rifiuti</span><span id="kpi-rif-totale" class="text-2xl font-black text-white">0</span></div>
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between"><span class="text-[10px] font-bold text-slate-400">Non Pericolosi</span><span id="kpi-rif-nonper" class="text-2xl font-black text-emerald-400">0</span></div>
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between"><span class="text-[10px] font-bold text-slate-400">Pericolosi (*)</span><span id="kpi-rif-per" class="text-2xl font-black text-rose-400">0</span></div>
+          </div>
+          <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+            <span class="text-xs font-black text-rose-400 uppercase">Registro Separato Rifiuti (D.Lgs. 152/06)</span>
+            <button onclick="esportaRegistroRifiutiExcel()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow-lg cursor-pointer flex items-center gap-2"><i class="fa-solid fa-download"></i> Esporta Rifiuti (.xlsx)</button>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+          <div id="dropzone-rifiuti" class="dropzone-rifiuti rounded-xl p-6 text-center cursor-pointer bg-slate-950/60 flex flex-col items-center justify-center gap-2">
+            <i class="fa-solid fa-file-circle-plus text-rose-400 text-2xl"></i>
+            <p class="text-xs font-bold text-white">Trascina qui i PDF RdP Rifiuti</p>
+            <input type="file" id="fileInputRifiutiPdf" accept=".pdf" multiple class="hidden" onchange="gestisciFileRifiutiSelezionati(this.files)">
+          </div>
+
+          <!-- SCHEDA RIFIUTO -->
+          <div id="form-rifiuti-container" class="hidden mt-6 border border-rose-500/40 bg-slate-950/90 rounded-2xl p-5 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 class="text-sm font-black text-rose-400 uppercase">Verifica & Salvataggio Rifiuto</h3>
+              <div class="flex gap-2">
+                <input type="hidden" id="edit_rifiuto_uid" value="">
+                <button onclick="chiudiAnteprimaRifiuto()" class="px-3 py-1.5 bg-slate-800 text-xs font-bold rounded-lg cursor-pointer">Annulla</button>
+                <button onclick="salvaRecordRifiuto()" class="px-4 py-1.5 bg-rose-600 text-white text-xs font-black rounded-lg cursor-pointer">Salva Rifiuto</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div><label class="block text-[10px] text-slate-400 mb-1">Prog.</label><input type="number" id="r_prog" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-amber-300 font-bold"></div>
+              <div><label class="block text-[10px] text-slate-400 mb-1">Data Prelievo</label><input type="text" id="r_data_prelievo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"></div>
+              <div><label class="block text-[10px] text-rose-400 mb-1">Codice EER / CER *</label><input type="text" id="r_cer" class="w-full bg-slate-900 border border-rose-500/40 rounded-lg p-2 text-rose-300 font-bold"></div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">Pericolosità</label>
+                <select id="r_pericolosita" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-bold">
+                  <option value="Non Pericoloso">Non Pericoloso</option>
+                  <option value="Pericoloso">Pericoloso (*)</option>
+                </select>
+              </div>
+              <div class="sm:col-span-2"><label class="block text-[10px] text-slate-400 mb-1">Cantiere / WBS</label><input type="text" id="r_cantiere" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white"></div>
+              <div class="sm:col-span-2"><label class="block text-[10px] text-slate-400 mb-1">Certificato n°</label><input type="text" id="r_certificato" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sky-300 font-bold"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-800/90 text-slate-300 border-b border-slate-700 text-[11px] uppercase">
+                  <th class="p-3">Prog.</th><th class="p-3">Data</th><th class="p-3 text-center">CER</th><th class="p-3">Pericolosità</th><th class="p-3">Cantiere</th><th class="p-3">Certificato</th><th class="p-3 text-center">Azioni</th>
+                </tr>
+              </thead>
+              <tbody id="rifiuti-table-tbody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="border-t border-slate-800/80 bg-slate-950 py-4 px-4 sm:px-8 text-center sm:text-left">
+      <div class="max-w-[1600px] mx-auto flex justify-between text-[11px] text-slate-500">
+        <span>Ufficio Ambiente — Terzo Valico dei Giovi</span>
+        <span>Moduli JavaScript Indipendenti</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- INCLUSIONE DEI SOTTOCODICI MODULARI -->
+  <script src="js/config.js"></script>
+  <script src="js/terre.js"></script>
+  <script src="js/rifiuti.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
