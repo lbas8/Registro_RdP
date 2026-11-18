@@ -1,4 +1,5 @@
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+pdfjsLib.disableWorker = true;
+// PDF.js configurato per l'esecuzione locale senza Worker esterno
 const STORAGE_KEY_SESSION = "tv_registro_rdp_session_v1";
 let utenteCorrente = null;
 
