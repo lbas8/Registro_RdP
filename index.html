@@ -502,8 +502,11 @@
                   <h4 class="text-[11px] font-black text-sky-400 uppercase tracking-wider flex items-center gap-2">
                     <i class="fa-solid fa-flask"></i> 4. Analiti Chimici Estratti — 97 Parametri (Colonne BF ➔ EX)
                   </h4>
-                  <p class="text-[11px] text-slate-400">
-                    Valorizzati/Rilevati: <span id="badge-count-valorizzati" class="font-bold text-emerald-400">0</span> su 97 • Puoi filtrare o modificare ogni singolo valore prima di salvare
+                  <p class="text-[11px] text-slate-400 flex flex-wrap items-center gap-2 mt-0.5">
+                    <span>Valorizzati: <span id="badge-count-valorizzati" class="font-bold text-emerald-400">0</span> su 97</span>
+                    <span>•</span>
+                    <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-500/40 border border-emerald-400 inline-block"></span> Entro Col. A (Tab. 1/A)</span>
+                    <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-rose-500/40 border border-rose-400 inline-block"></span> Supera Col. A (Tab. 1/B o Rifiuto)</span>
                   </p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
@@ -531,7 +534,7 @@
                       <th class="p-2.5 text-center w-20">U.M.</th>
                       <th class="p-2.5 text-center w-36 text-sky-400">Valore Estratto</th>
                       <th class="p-2.5 text-center w-24 text-emerald-400">Col. A</th>
-                      <th class="p-2.5 text-center w-24 text-amber-400">Col. B</th>
+                      <th class="p-2.5 text-center w-24 text-rose-400">Col. B</th>
                     </tr>
                   </thead>
                   <tbody id="preview-analiti-tbody" class="divide-y divide-slate-800"></tbody>
@@ -620,7 +623,7 @@
                 <h3 class="text-sm font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
                   <i class="fa-solid fa-table-columns"></i> Matrice Chimica Completa (Colonne BF ➔ EX — 97 Analiti)
                 </h3>
-                <p class="text-[11px] text-slate-400">Confronto automatico dei valori con i limiti CSC Tab. 1 All. 5 Parte IV D.Lgs. 152/06 (Col. A e Col. B)</p>
+                <p class="text-[11px] text-slate-400">Confronto automatico dei valori con i limiti CSC Tab. 1 All. 5 Parte IV D.Lgs. 152/06 (<span class="text-emerald-400 font-bold">Verde = entro Col. A</span> • <span class="text-rose-400 font-bold">Rosso = supera Col. A</span>)</p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
                 <select id="filtro-matrice-cat" onchange="renderMatriceAnaliti()" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-sky-400">
@@ -667,7 +670,7 @@
 
       <!-- #####################################################################
            MACRO-SEZIONE B: REGISTRO RDP RIFIUTI (SEPARATO E STRINGATO)
-           ################################################################     -->
+           ##################################################################### -->
       <div id="sezione-rifiuti-wrapper" class="hidden space-y-6">
 
         <!-- KPI E AZIONI EXCEL RIFIUTI -->
@@ -690,8 +693,8 @@
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between">
               <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pericolosi (*)</span>
               <div class="flex items-baseline justify-between mt-1">
-                <span id="kpi-rif-per" class="text-2xl font-black text-amber-400">0</span>
-                <i class="fa-solid fa-skull-crossbones text-amber-400 text-sm"></i>
+                <span id="kpi-rif-per" class="text-2xl font-black text-rose-400">0</span>
+                <i class="fa-solid fa-skull-crossbones text-rose-400 text-sm"></i>
               </div>
             </div>
           </div>
@@ -887,7 +890,7 @@
 
   <!-- =====================================================================
        MOTORE JAVASCRIPT COMPLETO E DEFINITIVO (TERRE + RIFIUTI)
-       ================================================================     -->
+       ===================================================================== -->
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
@@ -1021,6 +1024,49 @@
       configuraDropzone();
       configuraDropzoneRifiuti();
     });
+
+    // =========================================================================
+    // VALUTAZIONE CONFORMITA' TAB. 1/A (VERDE) vs TAB. 1/B / SUPERA (ROSSO)
+    // =========================================================================
+    function valutaStatoConformitaAnalita(valStr, colAStr, colBStr) {
+      if (!valStr || valStr.trim() === "") return "VUOTO";
+      const s = valStr.trim().toLowerCase();
+      if (s === "n.r." || s === "nr" || s === "assente" || s === "-") return "OK_A";
+      // Valori con segno di minoranza (< 0,10, < 5, ecc.) sono per definizione entro limite Tab. 1/A
+      if (s.startsWith("<")) return "OK_A";
+
+      const numMatch = s.replace(",", ".").match(/(\d+(?:\.\d+)?)/);
+      if (!numMatch) return "NEUTRO";
+
+      const num = parseFloat(numMatch[1]);
+      const limA = parseFloat(String(colAStr).replace(",", "."));
+      const limB = parseFloat(String(colBStr).replace(",", "."));
+
+      if (!isNaN(limA) && num <= limA) return "OK_A";
+      if (!isNaN(limB) && num <= limB) return "SUPERA_A";
+      return "SUPERA_B";
+    }
+
+    function getClassiInputAnalita(stato) {
+      if (stato === "OK_A") {
+        return "bg-emerald-950/80 border-emerald-500 text-emerald-300 focus:border-emerald-400";
+      }
+      if (stato === "SUPERA_A") {
+        return "bg-rose-950/75 border-rose-500 text-rose-300 focus:border-rose-400";
+      }
+      if (stato === "SUPERA_B") {
+        return "bg-rose-900/80 border-rose-400 text-white focus:border-rose-300 ring-1 ring-rose-500/50";
+      }
+      if (stato === "NEUTRO") {
+        return "bg-slate-950 border-sky-500/60 text-sky-300 focus:border-sky-400";
+      }
+      return "bg-slate-950 border-slate-700 text-slate-300 focus:border-sky-400";
+    }
+
+    function aggiornaStileInputAnalita(inputEl, colAStr, colBStr) {
+      const stato = valutaStatoConformitaAnalita(inputEl.value, colAStr, colBStr);
+      inputEl.className = `w-full text-center border rounded px-2 py-1 font-bold outline-none transition-colors ${getClassiInputAnalita(stato)}`;
+    }
 
     // =========================================================================
     // PROTEZIONE VISIBILITA' BOX CREDENZIALI (SOLO LEONE BASTIANCICH)
@@ -1187,7 +1233,7 @@
             uid: "seed_15206", prog: 15206, data_prelievo: "14/09/2026", prod_wbs: "NV132", prod_cantiere: "COP1", prod_sito: "Libarna",
             punto_prelievo: "Fronte scavo", denominazione: "S1 - Lotto Libarna", pk_km: "18", pk_hm: "2", litologia: "Argilloscisti",
             cdc: "CDC_20260914_0001_S1", laboratorio: "ARCADIA", certificato_num: "26LA13878", data_emissione: "23/10/2026",
-            anno_lab_cert: "2026_ARCADIA_26LA13878", sottoprodotto: "1/B", autore: "Leone Bastiancich", autoreIniziali: "LB", analiti: { arsenico: "4,06", nichel: "74,1" }
+            anno_lab_cert: "2026_ARCADIA_26LA13878", sottoprodotto: "1/B", autore: "Leone Bastiancich", autoreIniziali: "LB", analiti: { arsenico: "24,5", nichel: "74,1" }
           }
         ];
         salvaSuLocalStorage();
@@ -1256,7 +1302,6 @@
             for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
               const page = await pdf.getPage(pageNum);
               const textContent = await page.getTextContent();
-              // Raggruppamento con tolleranza verticale di 9pt per tenere allineati analita, "< 0.10" e "48.9 ± 14.7"
               const righeMappa = {};
               textContent.items.forEach(item => {
                 const y = Math.round(item.transform[5] / 9) * 9;
@@ -1299,7 +1344,6 @@
 
       for (let i = 0; i < righe.length; i++) {
         for (const alias of analitaObj.aliases) {
-          // Evita che "Cromo" faccia match su "Cromo (VI)"
           if (analitaObj.key === "cromo" && /cromo\s*\(?vi\)?/i.test(righe[i])) continue;
           const regex = new RegExp(alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
           const m = regex.exec(righe[i]);
@@ -1320,37 +1364,31 @@
       const rigaSucc = righe[rigaTrovataIdx + 1] || "";
       const rigaPrec = righe[rigaTrovataIdx - 1] || "";
 
-      // Pulizia dei codici norma UNI / EN / ISO / EPA / CNR per non pescare numeri dai metodi
       const pulisciMetodi = (str) => str
         .replace(/(?:UNI|EN|ISO|EPA|CNR|IRSA|DM|D\.Lgs\.?)\s*[A-Z0-9\-\/:]+/gi, " ")
         .replace(/C12-C40|C10-C40|C<12|C>12/gi, " ");
 
       const bloccoRicerca = pulisciMetodi(dopoAlias + " | " + rigaSucc + " | " + rigaPrec);
 
-      // 1. Controllo "n.r." (non rilevabile)
       if (/\bn\.?r\.?\b/i.test(pulisciMetodi(dopoAlias))) {
         return "n.r.";
       }
 
-      // 2. Priorità assoluta a valori con "<" o ">" (es. "< 0.10", "< 0.500")
       const matchMinore = bloccoRicerca.match(/([<>]\s*\d+(?:[.,]\d+)?)/);
       if (matchMinore) {
         return formattaValoreItaliano(matchMinore[1]);
       }
 
-      // 3. Priorità a valori con incertezza "±" (es. "48.9 ± 14.7", "356 ± 107")
       const matchIncertezza = bloccoRicerca.match(/(\d+(?:[.,]\d+)?)\s*±\s*\d+(?:[.,]\d+)?/);
       if (matchIncertezza) {
         return formattaValoreItaliano(matchIncertezza[1]);
       }
 
-      // 4. Fallback: primo numero decimale sulla riga stessa (es. "48.9", "0.10")
       const matchDecimale = pulisciMetodi(dopoAlias).match(/\b(\d+[.,]\d+)\b/);
       if (matchDecimale) {
         return formattaValoreItaliano(matchDecimale[1]);
       }
 
-      // 5. Fallback finale: numero intero sulla riga purché NON sia uguale ai limiti Col. A / Col. B
       const limA = analitaObj.colA.replace(",", ".");
       const limB = analitaObj.colB.replace(",", ".");
       const interi = pulisciMetodi(dopoAlias).match(/\b(\d{1,4})\b/g);
@@ -1453,13 +1491,26 @@
 
       let amiantoSiNo = "NO";
       if (/amianto[^\n]{0,40}(?:presente|rilevato|positivo)/i.test(testo)) amiantoSiNo = "SI";
-      let sottoprodotto = "1/A";
-      let cer = "";
-      if (/EER\s+dichiarato|rifiuto|17\s*05\s*04/i.test(testo)) { sottoprodotto = ""; cer = "17 05 04"; }
-      else if (/colonna\s*B|industriale/i.test(testo)) { sottoprodotto = "1/B"; }
 
       const analitiEstratti = {};
-      ANALITI_97.forEach(an => { analitiEstratti[an.key] = trovaValoreAnalitaInTesto(testo, an); });
+      let superaA = false;
+      let superaB = false;
+      ANALITI_97.forEach(an => {
+        const val = trovaValoreAnalitaInTesto(testo, an);
+        analitiEstratti[an.key] = val;
+        const stato = valutaStatoConformitaAnalita(val, an.colA, an.colB);
+        if (stato === "SUPERA_A") superaA = true;
+        if (stato === "SUPERA_B") superaB = true;
+      });
+
+      let sottoprodotto = "1/A";
+      let cer = "";
+      if (/EER\s+dichiarato|rifiuto|17\s*05\s*04/i.test(testo) || superaB) {
+        sottoprodotto = "";
+        cer = "17 05 04";
+      } else if (/colonna\s*B|industriale/i.test(testo) || superaA) {
+        sottoprodotto = "1/B";
+      }
 
       return {
         uid: "rdp_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
@@ -1580,6 +1631,9 @@
       ANALITI_97.forEach(an => {
         const val = (rec.analiti && rec.analiti[an.key]) ? rec.analiti[an.key] : "";
         if (val !== "" && val !== "n.r.") countValorizzati++;
+        const stato = valutaStatoConformitaAnalita(val, an.colA, an.colB);
+        const classiInput = getClassiInputAnalita(stato);
+
         const tr = document.createElement("tr");
         tr.className = "analita-preview-row hover:bg-slate-800/60 transition";
         tr.dataset.label = an.excelHeader.toLowerCase();
@@ -1591,10 +1645,10 @@
           <td class="p-2 text-[10px] text-slate-400">${an.cat}</td>
           <td class="p-2 text-center text-[10px] text-slate-400">${an.um}</td>
           <td class="p-1.5 text-center">
-            <input type="text" id="prev_an_${an.key}" value="${val}" oninput="aggiornaConteggioValorizzati()" class="w-full text-center bg-slate-950 border ${val && val !== 'n.r.' ? 'border-sky-500/60 text-sky-300' : 'border-slate-700 text-slate-300'} rounded px-2 py-1 font-bold outline-none">
+            <input type="text" id="prev_an_${an.key}" value="${val}" oninput="aggiornaConteggioValorizzati(); aggiornaStileInputAnalita(this, '${an.colA}', '${an.colB}')" class="w-full text-center border rounded px-2 py-1 font-bold outline-none transition-colors ${classiInput}">
           </td>
-          <td class="p-2 text-center text-[10px] text-emerald-400/80">${an.colA}</td>
-          <td class="p-2 text-center text-[10px] text-amber-400/80">${an.colB}</td>
+          <td class="p-2 text-center text-[11px] font-bold text-emerald-400">${an.colA}</td>
+          <td class="p-2 text-center text-[11px] font-bold text-rose-400">${an.colB}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -1789,7 +1843,7 @@
       lista.forEach(r => {
         let badgeQual = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500/15 text-rose-400 border border-rose-500/30">RIFIUTO</span>`;
         if (r.sottoprodotto === "1/A") badgeQual = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">1/A</span>`;
-        else if (r.sottoprodotto === "1/B") badgeQual = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/15 text-amber-400 border border-amber-500/30">1/B</span>`;
+        else if (r.sottoprodotto === "1/B") badgeQual = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500/15 text-rose-300 border border-rose-500/40">1/B</span>`;
 
         const tr = document.createElement("tr");
         tr.className = "hover:bg-slate-800/50 transition";
@@ -1829,7 +1883,7 @@
 
       let headHtml = `<tr class="bg-slate-800 text-slate-200 border-b border-slate-700"><th class="p-2.5 sticky left-0 bg-slate-800 z-20 min-w-[170px]">Prog. / Certificato</th>`;
       analitiVisibili.forEach(an => {
-        headHtml += `<th class="p-2 text-center min-w-[115px]"><div class="text-[9px] font-mono text-slate-400">${an.col} • A:${an.colA} B:${an.colB}</div><div class="text-white font-bold">${an.excelHeader}</div></th>`;
+        headHtml += `<th class="p-2 text-center min-w-[125px]"><div class="text-[9px] font-mono"><span class="text-slate-400">${an.col}</span> • <span class="text-emerald-400">A:${an.colA}</span> <span class="text-rose-400">B:${an.colB}</span></div><div class="text-white font-bold">${an.excelHeader}</div></th>`;
       });
       headHtml += `</tr>`;
       thead.innerHTML = headHtml;
@@ -1839,7 +1893,12 @@
         let rowHtml = `<tr class="hover:bg-slate-800/40"><td class="p-2.5 sticky left-0 bg-slate-900 z-10 font-black text-amber-400">${r.prog} — ${r.certificato_num}</td>`;
         analitiVisibili.forEach(an => {
           const val = (r.analiti && r.analiti[an.key]) ? r.analiti[an.key] : "-";
-          rowHtml += `<td class="p-2 text-center font-mono ${val !== '-' && val !== 'n.r.' ? 'text-sky-300 font-bold' : 'text-slate-500'}">${val}</td>`;
+          const stato = val === "-" ? "VUOTO" : valutaStatoConformitaAnalita(val, an.colA, an.colB);
+          let cellStyle = "text-slate-500";
+          if (stato === "OK_A") cellStyle = "bg-emerald-950/60 text-emerald-300 font-bold";
+          else if (stato === "SUPERA_A") cellStyle = "bg-rose-950/70 text-rose-300 font-bold";
+          else if (stato === "SUPERA_B") cellStyle = "bg-rose-900/80 text-white font-black";
+          rowHtml += `<td class="p-2 text-center font-mono ${cellStyle}">${val}</td>`;
         });
         rowHtml += `</tr>`;
         tbody.innerHTML += rowHtml;
@@ -2237,7 +2296,7 @@
       filtrati.forEach(r => {
         const isPer = (r.pericolosita && r.pericolosita.startsWith("Pericoloso")) || (r.cer && r.cer.includes("*"));
         const badgePer = isPer
-          ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/15 text-amber-400 border border-amber-500/30">${r.pericolosita || "Pericoloso"}</span>`
+          ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500/15 text-rose-400 border border-rose-500/30">${r.pericolosita || "Pericoloso"}</span>`
           : `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">${r.pericolosita || "Non Pericoloso"}</span>`;
 
         const tr = document.createElement("tr");
