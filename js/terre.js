@@ -536,13 +536,43 @@ function renderAlberoCartelle() {
   });
   let html = "";
   Object.keys(tree).sort().forEach(area => {
-    html += `<div class="border border-slate-800 rounded-xl p-4 bg-slate-950/60 space-y-2"><div class="text-sky-400 font-bold text-xs">${area} (${tree[area].length} RdP)</div><div class="pl-4 space-y-1">`;
+    html += `<div class="border border-slate-800 rounded-xl p-4 bg-slate-950/60 space-y-2"><div class="text-sky-400 font-bold text-xs">${area} (${tree[area].length} RdP)</div><div class="pl-4 space-y-2">`;
     tree[area].forEach(r => {
-      html += `<div class="text-xs text-slate-300 flex justify-between bg-slate-900 p-2 rounded-lg"><span><b>#${r.prog}</b> • Cert. ${r.certificato_num}</span><button onclick="modificaRecordEsistente('${r.uid}')" class="text-sky-400 font-bold cursor-pointer">Apri ➔</button></div>`;
+      let pdfBtn = "";
+      if (r.pdfBase64) {
+        pdfBtn = `<button onclick="scaricaPdfSalvato('${r.uid}')" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-[11px] font-bold cursor-pointer flex items-center gap-1.5"><i class="fa-solid fa-file-pdf"></i> Scarica PDF</button>`;
+      } else {
+        pdfBtn = `<span class="text-[10px] text-slate-500 italic">PDF non allegato</span>`;
+      }
+
+      html += `
+        <div class="text-xs text-slate-300 flex flex-wrap items-center justify-between gap-2 bg-slate-900 p-2.5 rounded-xl border border-slate-800/80">
+          <div><b>#${r.prog}</b> • Cert. <span class="text-sky-400 font-bold">${r.certificato_num}</span> <span class="text-slate-500 text-[11px]">(${r.denominazione})</span></div>
+          <div class="flex items-center gap-2">
+            ${pdfBtn}
+            <button onclick="modificaRecordEsistente('${r.uid}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-400 text-[11px] font-bold cursor-pointer flex items-center gap-1"><i class="fa-solid fa-pen"></i> Apri</button>
+          </div>
+        </div>`;
     });
     html += `</div></div>`;
   });
   container.innerHTML = html || `<p class="text-xs text-slate-500">Nessun record.</p>`;
+}
+
+// Funzione globale per scaricare il PDF salvato nel record
+function scaricaPdfSalvato(uid) {
+  const rec = archivioRecords.find(r => r.uid === uid);
+  if (!rec || !rec.pdfBase64) {
+    mostraToast("File PDF non trovato per questo record.", "error");
+    return;
+  }
+  const link = document.createElement("a");
+  link.href = rec.pdfBase64;
+  link.download = `${rec.certificato_num || "RdP"}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  mostraToast("Download PDF avviato!", "success");
 }
 
 function esportaRegistroExcelCompleto() {
