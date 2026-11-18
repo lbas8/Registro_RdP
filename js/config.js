@@ -106,5 +106,5 @@ const ANALITI_97 = [
   { col: "EU", key: "pcdd_pcdf", excelHeader: "Sommatoria PCDD, PCDF (conversione T.E.)", cat: "Altro", um: "ng/kg ss", colA: "10", colB: "100", aliases: ["Sommatoria PCDD, PCDF"] },
   { col: "EV", key: "pcb", excelHeader: "Policlorobifenili (PCB)", cat: "Altro", um: "mg/kg ss", colA: "0,06", colB: "5", aliases: ["Policlorobifenili (PCB)", "PCB"] },
   { col: "EW", key: "idrocarburi_leggeri", excelHeader: "Idrocarburi leggeri C<12", cat: "Idrocarburi", um: "mg/kg ss", colA: "10", colB: "250", aliases: ["Idrocarburi leggeri C<12", "Idrocarburi leggeri C<=12", "Idrocarburi C<12", "Idrocarburi leggeri"] },
- { col: "EX", key: "idrocarburi_pesanti", excelHeader: "Idrocarburi pesanti C>12", cat: "Idrocarburi", um: "mg/kg ss", colA: "50", colB: "750", aliases: ["Idrocarburi pesanti C12-C40", "Idrocarburi C12-C40", "Idrocarburi C10-C40", "Idrocarburi pesanti C>12", "Idrocarburi pesanti"] }
+  { col: "EX", key: "idrocarburi_pesanti", excelHeader: "Idrocarburi pesanti C>12", cat: "Idrocarburi", um: "mg/kg ss", colA: "50", colB: "750", aliases: ["Idrocarburi pesanti C12-C40", "Idrocarburi C12-C40", "Idrocarburi C10-C40", "Idrocarburi pesanti C>12", "Idrocarburi pesanti"] }
 ];
